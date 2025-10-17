@@ -451,7 +451,7 @@ palette = 1=#f7768e
 
 - 查看 [安裝指南](INSTALL.md)
 - 查看 [Ghostty 官方文檔](https://ghostty.org/docs)
-- 提交 [GitHub Issue](https://github.com/yourusername/VibeGhostty/issues)
+- 提交 [GitHub Issue](https://github.com/frankekn/VibeGhostty/issues)
 
 ---
 

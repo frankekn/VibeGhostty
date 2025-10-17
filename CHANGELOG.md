@@ -196,7 +196,7 @@ cp config ~/Library/Application\ Support/com.mitchellh.ghostty/config
 - 文檔改進
 - 配置優化
 
-請透過 [GitHub Issues](https://github.com/yourusername/VibeGhostty/issues) 聯繫我們。
+請透過 [GitHub Issues](https://github.com/frankekn/VibeGhostty/issues) 聯繫我們。
 
 ---
 

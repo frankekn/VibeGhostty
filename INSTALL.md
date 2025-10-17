@@ -59,7 +59,7 @@ fi
 
 ```bash
 # Clone 專案（如果從 GitHub）
-git clone https://github.com/yourusername/VibeGhostty.git
+git clone https://github.com/frankekn/VibeGhostty.git
 cd VibeGhostty
 
 # 複製配置文件
@@ -211,7 +211,7 @@ pkill -9 ghostty && open -a Ghostty
 
 1. 查看 [完整指南](GUIDE.md)
 2. 查看 [Ghostty 官方文檔](https://ghostty.org/docs)
-3. 提交 [GitHub Issue](https://github.com/yourusername/VibeGhostty/issues)
+3. 提交 [GitHub Issue](https://github.com/frankekn/VibeGhostty/issues)
 
 ---
 

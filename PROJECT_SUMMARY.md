@@ -148,9 +148,9 @@ VibeGhostty/
 
 ## 📞 聯絡資訊
 
-- **GitHub**: [VibeGhostty](https://github.com/yourusername/VibeGhostty)
-- **Issues**: [提交問題](https://github.com/yourusername/VibeGhostty/issues)
-- **Discussions**: [參與討論](https://github.com/yourusername/VibeGhostty/discussions)
+- **GitHub**: [VibeGhostty](https://github.com/frankekn/VibeGhostty)
+- **Issues**: [提交問題](https://github.com/frankekn/VibeGhostty/issues)
+- **Discussions**: [參與討論](https://github.com/frankekn/VibeGhostty/discussions)
 
 ---
 
