@@ -1,0 +1,223 @@
+#!/usr/bin/env bash
+# ═══════════════════════════════════════════════════════
+# Tmux AI Workspace Interactive Launcher
+# Created for Frank Yang - VibeGhostty Project
+# ═══════════════════════════════════════════════════════
+
+set -e
+
+# ───────────────────────────────────────────────────────
+# Colors for beautiful output
+# ───────────────────────────────────────────────────────
+
+BLUE="\033[34m"
+CYAN="\033[36m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+MAGENTA="\033[35m"
+RED="\033[31m"
+BOLD="\033[1m"
+RESET="\033[0m"
+
+# ───────────────────────────────────────────────────────
+# Configuration
+# ───────────────────────────────────────────────────────
+
+LAYOUTS_DIR="$HOME/.tmux-layouts"
+PROJECT_DIR="${1:-$PWD}"
+
+# 如果有安裝 fzf，可以用來選擇專案
+HAS_FZF=false
+if command -v fzf &> /dev/null; then
+    HAS_FZF=true
+fi
+
+# ───────────────────────────────────────────────────────
+# Helper Functions
+# ───────────────────────────────────────────────────────
+
+print_header() {
+    clear
+    echo -e "${BLUE}${BOLD}"
+    echo "╔═══════════════════════════════════════════════════════════╗"
+    echo "║                                                           ║"
+    echo "║          🚀 Tmux AI Workspace Launcher 🤖                ║"
+    echo "║                                                           ║"
+    echo "║              Created for Frank Yang                       ║"
+    echo "║                                                           ║"
+    echo "╚═══════════════════════════════════════════════════════════╝"
+    echo -e "${RESET}"
+    echo ""
+}
+
+print_menu() {
+    echo -e "${CYAN}${BOLD}選擇工作空間布局：${RESET}"
+    echo ""
+    echo -e "  ${GREEN}1${RESET} │ ${BOLD}AI Workspace${RESET} (主要工作模式)"
+    echo -e "    │ ├─ Codex CLI (70%) + Claude Code (30%)"
+    echo -e "    │ └─ Monitor pane 用於測試/日誌"
+    echo ""
+    echo -e "  ${GREEN}2${RESET} │ ${BOLD}AI Compare${RESET} (比較模式)"
+    echo -e "    │ ├─ Codex vs Claude 並排比較 (50/50)"
+    echo -e "    │ └─ 比較兩個 AI 的輸出品質"
+    echo ""
+    echo -e "  ${GREEN}3${RESET} │ ${BOLD}Full Focus${RESET} (專注模式)"
+    echo -e "    │ ├─ 單一 AI 全屏 (100%)"
+    echo -e "    │ └─ 深度思考，減少干擾"
+    echo ""
+    echo -e "  ${GREEN}4${RESET} │ ${BOLD}Resume${RESET} (恢復上次 session)"
+    echo -e "    │ └─ 列出並選擇現有 sessions"
+    echo ""
+
+    if [[ "$HAS_FZF" == true ]]; then
+        echo -e "  ${GREEN}5${RESET} │ ${BOLD}Project Selector${RESET} (專案選擇器)"
+        echo -e "    │ └─ 使用 fzf 快速選擇專案"
+        echo ""
+    fi
+
+    echo -e "  ${RED}q${RESET} │ ${BOLD}Exit${RESET} (離開)"
+    echo ""
+    echo -e "${YELLOW}───────────────────────────────────────────────────────${RESET}"
+    echo -e "📁 當前專案目錄: ${MAGENTA}$PROJECT_DIR${RESET}"
+    echo -e "${YELLOW}───────────────────────────────────────────────────────${RESET}"
+    echo ""
+}
+
+list_sessions() {
+    echo -e "${CYAN}${BOLD}現有的 Tmux Sessions：${RESET}"
+    echo ""
+
+    if tmux list-sessions 2>/dev/null; then
+        echo ""
+        echo -e "${YELLOW}輸入 session 名稱以連接，或按 Enter 返回${RESET}"
+        read -p "> " session_name
+
+        if [[ -n "$session_name" ]]; then
+            if tmux has-session -t "$session_name" 2>/dev/null; then
+                echo "🔗 連接到 $session_name..."
+                tmux attach-session -t "$session_name"
+                exit 0
+            else
+                echo -e "${RED}❌ Session '$session_name' 不存在${RESET}"
+                sleep 2
+            fi
+        fi
+    else
+        echo -e "${YELLOW}⚠️  目前沒有執行中的 sessions${RESET}"
+        sleep 2
+    fi
+}
+
+select_project_with_fzf() {
+    echo -e "${CYAN}${BOLD}選擇專案目錄...${RESET}"
+    echo ""
+
+    # 搜尋常見的專案目錄
+    SEARCH_DIRS=(
+        "$HOME/Documents/GitHub"
+        "$HOME/Projects"
+        "$HOME/Developer"
+        "$HOME/Code"
+        "$HOME/Work"
+    )
+
+    PROJECTS=()
+    for dir in "${SEARCH_DIRS[@]}"; do
+        if [[ -d "$dir" ]]; then
+            while IFS= read -r project; do
+                PROJECTS+=("$project")
+            done < <(find "$dir" -maxdepth 2 -type d -name ".git" -exec dirname {} \; 2>/dev/null)
+        fi
+    done
+
+    if [[ ${#PROJECTS[@]} -eq 0 ]]; then
+        echo -e "${YELLOW}⚠️  找不到任何 git 專案${RESET}"
+        sleep 2
+        return
+    fi
+
+    # 使用 fzf 選擇
+    SELECTED=$(printf '%s\n' "${PROJECTS[@]}" | fzf --height=50% --border --prompt="選擇專案 > " --preview="ls -la {}" --preview-window=right:50%)
+
+    if [[ -n "$SELECTED" ]]; then
+        PROJECT_DIR="$SELECTED"
+        echo -e "${GREEN}✅ 已選擇: $PROJECT_DIR${RESET}"
+        sleep 1
+    fi
+}
+
+launch_layout() {
+    local layout=$1
+    local script="$LAYOUTS_DIR/${layout}.sh"
+
+    if [[ ! -f "$script" ]]; then
+        echo -e "${RED}❌ 錯誤：找不到布局腳本 '$script'${RESET}"
+        echo -e "${YELLOW}💡 請確認已執行安裝腳本${RESET}"
+        sleep 3
+        return 1
+    fi
+
+    echo -e "${GREEN}🚀 啟動 $layout...${RESET}"
+    sleep 0.5
+
+    bash "$script" "$PROJECT_DIR"
+}
+
+# ───────────────────────────────────────────────────────
+# Main Loop
+# ───────────────────────────────────────────────────────
+
+while true; do
+    print_header
+    print_menu
+
+    read -p "請選擇 [1-4/q]: " choice
+
+    case $choice in
+        1)
+            launch_layout "ai-workspace"
+            exit 0
+            ;;
+        2)
+            launch_layout "ai-compare"
+            exit 0
+            ;;
+        3)
+            echo ""
+            echo -e "${CYAN}選擇 AI 工具：${RESET}"
+            echo "  1) Codex CLI (預設)"
+            echo "  2) Claude Code"
+            read -p "請選擇 [1/2]: " ai_choice
+
+            case $ai_choice in
+                2)
+                    bash "$LAYOUTS_DIR/full-focus.sh" "$PROJECT_DIR" "claude"
+                    ;;
+                *)
+                    bash "$LAYOUTS_DIR/full-focus.sh" "$PROJECT_DIR" "codex"
+                    ;;
+            esac
+            exit 0
+            ;;
+        4)
+            list_sessions
+            ;;
+        5)
+            if [[ "$HAS_FZF" == true ]]; then
+                select_project_with_fzf
+            else
+                echo -e "${RED}❌ 無效選擇${RESET}"
+                sleep 1
+            fi
+            ;;
+        q|Q)
+            echo ""
+            echo -e "${YELLOW}👋 再見！${RESET}"
+            exit 0
+            ;;
+        *)
+            echo -e "${RED}❌ 無效選擇，請重試${RESET}"
+            sleep 1
+            ;;
+    esac
+done

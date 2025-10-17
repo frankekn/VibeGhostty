@@ -1,0 +1,277 @@
+#!/usr/bin/env bash
+# ═══════════════════════════════════════════════════════
+# Tmux Attach - 智能 Tmux Session Wrapper
+# Created for Frank Yang - VibeGhostty Project
+# ═══════════════════════════════════════════════════════
+#
+# 快速 attach 到當前專案的 tmux session
+# 只需輸入 2 個字元即可！
+#
+# Usage:
+#   ta              自動偵測當前專案
+#   ta -l           列出所有 session
+#   ta -n NAME      attach 到指定 session
+#   ta -h           顯示幫助
+#
+# ═══════════════════════════════════════════════════════
+
+set -e
+
+# ───────────────────────────────────────────────────────
+# Colors
+# ───────────────────────────────────────────────────────
+
+BOLD="\033[1m"
+BLUE="\033[38;5;111m"
+CYAN="\033[36m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+RED="\033[31m"
+ORANGE="\033[38;5;215m"
+RESET="\033[0m"
+
+# ───────────────────────────────────────────────────────
+# Helper Functions
+# ───────────────────────────────────────────────────────
+
+print_success() {
+    echo -e "${GREEN}✅ $1${RESET}"
+}
+
+print_warning() {
+    echo -e "${YELLOW}⚠️  $1${RESET}"
+}
+
+print_error() {
+    echo -e "${RED}❌ $1${RESET}"
+}
+
+print_info() {
+    echo -e "${CYAN}ℹ️  $1${RESET}"
+}
+
+print_rocket() {
+    echo -e "${BLUE}🚀 $1${RESET}"
+}
+
+show_help() {
+    cat << 'EOF'
+╔════════════════════════════════════════════════════════════╗
+║              ta - 智能 Tmux Session 管理工具               ║
+╚════════════════════════════════════════════════════════════╝
+
+EOF
+    echo -e "${BOLD}${BLUE}用法：${RESET}"
+    echo ""
+    echo "  ta              自動偵測當前專案並 attach"
+    echo "  ta -l           列出所有 tmux session"
+    echo "  ta --list       同上"
+    echo "  ta -n NAME      attach 到指定名稱的 session"
+    echo "  ta --name NAME  同上"
+    echo "  ta -h           顯示此幫助"
+    echo "  ta --help       同上"
+    echo ""
+    echo -e "${BOLD}${ORANGE}功能特色：${RESET}"
+    echo ""
+    echo "  🎯 自動偵測"
+    echo "     • Git repo → session 名稱 = ai-{repo_name}"
+    echo "     • 非 git → session 名稱 = ai-{directory_name}"
+    echo ""
+    echo "  🔍 智能檢查"
+    echo "     • Session 存在 → 直接 attach"
+    echo "     • Session 不存在 → 詢問是否建立"
+    echo ""
+    echo "  🔄 Tmux 內部支援"
+    echo "     • 已在 tmux 內 → 使用 switch-client"
+    echo "     • 不在 tmux 內 → 使用 attach-session"
+    echo ""
+    echo -e "${BOLD}${GREEN}使用範例：${RESET}"
+    echo ""
+    echo "  # 在專案目錄快速 attach"
+    echo "  $ cd ~/projects/VibeGhostty"
+    echo "  $ ta"
+    echo ""
+    echo "  # 列出所有 session"
+    echo "  $ ta -l"
+    echo ""
+    echo "  # 指定 session 名稱"
+    echo "  $ ta -n ai-myproject"
+    echo ""
+    echo "════════════════════════════════════════════════════════════"
+    echo ""
+}
+
+list_sessions() {
+    if ! tmux list-sessions &>/dev/null; then
+        print_warning "目前沒有任何 tmux session"
+        echo ""
+        echo "建議執行以下命令建立 AI Workspace："
+        echo -e "  ${ORANGE}tmux-launch${RESET}  （互動式選單）"
+        echo -e "  ${ORANGE}~/.tmux-layouts/ai-workspace.sh${RESET}  （直接建立）"
+        echo ""
+        return 1
+    fi
+
+    echo -e "${BOLD}${CYAN}📋 可用的 Tmux Sessions:${RESET}"
+    echo ""
+
+    # 使用 tmux 格式化輸出
+    tmux list-sessions -F "#{session_name}|#{session_windows}|#{session_attached}" | while IFS='|' read -r name windows attached; do
+        if [[ "$attached" == "1" ]]; then
+            echo -e "  ${GREEN}●${RESET} ${BOLD}$name${RESET} (${windows} windows, ${GREEN}attached${RESET})"
+        else
+            echo -e "  ${YELLOW}○${RESET} $name (${windows} windows)"
+        fi
+    done
+
+    echo ""
+}
+
+get_project_session_name() {
+    local current_dir="$PWD"
+    local project_name=""
+
+    # 檢查是否為 git repo
+    if git rev-parse --is-inside-work-tree &>/dev/null; then
+        # 取得 repo root 的名稱
+        local repo_root=$(git rev-parse --show-toplevel)
+        project_name=$(basename "$repo_root")
+    else
+        # 使用當前目錄名稱
+        project_name=$(basename "$current_dir")
+    fi
+
+    # 建立 session 名稱（格式：ai-{project_name}）
+    echo "ai-${project_name}"
+}
+
+check_session_exists() {
+    local session_name="$1"
+    tmux has-session -t "$session_name" 2>/dev/null
+}
+
+attach_to_session() {
+    local session_name="$1"
+
+    # 檢查是否已在 tmux 內
+    if [[ -n "$TMUX" ]]; then
+        # 在 tmux 內，使用 switch-client
+        print_success "切換到 session '$session_name'..."
+        tmux switch-client -t "$session_name"
+    else
+        # 不在 tmux 內，使用 attach-session
+        print_success "連接到 session '$session_name'..."
+        tmux attach-session -t "$session_name"
+    fi
+}
+
+create_new_session() {
+    local session_name="$1"
+    local project_dir="$PWD"
+
+    echo ""
+    print_warning "Session '$session_name' 不存在"
+    echo ""
+    echo "是否使用 AI Workspace 布局建立新 session？"
+    echo -e "布局：${CYAN}左側 Codex (70%) + 右側 Claude/Monitor (30%)${RESET}"
+    echo ""
+    read -p "確認建立？ [Y/n]: " confirm
+
+    if [[ "$confirm" == "n" || "$confirm" == "N" ]]; then
+        echo ""
+        print_info "已取消"
+        echo ""
+        list_sessions
+        return 1
+    fi
+
+    echo ""
+    print_rocket "正在建立 AI Workspace..."
+
+    # 檢查 ai-workspace.sh 是否存在
+    local layout_script="$HOME/.tmux-layouts/ai-workspace.sh"
+
+    if [[ ! -f "$layout_script" ]]; then
+        print_error "找不到布局腳本：$layout_script"
+        echo ""
+        echo "請先執行安裝腳本："
+        echo -e "  ${ORANGE}cd ~/Documents/GitHub/VibeGhostty/tmux${RESET}"
+        echo -e "  ${ORANGE}./install.sh${RESET}"
+        echo ""
+        return 1
+    fi
+
+    # 執行布局腳本（不傳遞參數，讓它自動偵測）
+    "$layout_script" "$project_dir"
+}
+
+# ───────────────────────────────────────────────────────
+# Main Logic
+# ───────────────────────────────────────────────────────
+
+main() {
+    # 檢查 tmux 是否安裝
+    if ! command -v tmux &>/dev/null; then
+        print_error "Tmux 未安裝"
+        echo ""
+        echo "請先安裝 Tmux："
+        echo -e "  ${ORANGE}brew install tmux${RESET}  (macOS)"
+        echo ""
+        return 1
+    fi
+
+    # 解析參數
+    case "${1:-}" in
+        -h|--help)
+            show_help
+            return 0
+            ;;
+        -l|--list)
+            list_sessions
+            return 0
+            ;;
+        -n|--name)
+            if [[ -z "${2:-}" ]]; then
+                print_error "請指定 session 名稱"
+                echo ""
+                echo "用法：ta -n SESSION_NAME"
+                echo ""
+                list_sessions
+                return 1
+            fi
+
+            local session_name="$2"
+
+            if check_session_exists "$session_name"; then
+                attach_to_session "$session_name"
+            else
+                print_error "Session '$session_name' 不存在"
+                echo ""
+                list_sessions
+                return 1
+            fi
+            return 0
+            ;;
+        "")
+            # 自動偵測模式
+            local session_name=$(get_project_session_name)
+
+            if check_session_exists "$session_name"; then
+                attach_to_session "$session_name"
+            else
+                create_new_session "$session_name"
+            fi
+            return 0
+            ;;
+        *)
+            print_error "未知的參數：$1"
+            echo ""
+            echo "使用 ta -h 查看幫助"
+            echo ""
+            return 1
+            ;;
+    esac
+}
+
+# 執行主程式
+main "$@"

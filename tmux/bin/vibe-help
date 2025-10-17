@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+
+# ═══════════════════════════════════════════════════════
+# VibeGhostty 快捷鍵速查工具
+# 快速查看所有快捷鍵，不用記憶
+# ═══════════════════════════════════════════════════════
+
+# 顏色定義
+BOLD="\033[1m"
+BLUE="\033[38;5;111m"
+PURPLE="\033[38;5;141m"
+ORANGE="\033[38;5;215m"
+GREEN="\033[38;5;158m"
+YELLOW="\033[38;5;222m"
+RESET="\033[0m"
+
+# 清除螢幕
+clear
+
+# 顯示 ASCII 標題
+cat << 'EOF'
+╔════════════════════════════════════════════════════════════╗
+║         VibeGhostty 快捷鍵速查表 (Cheatsheet)             ║
+╚════════════════════════════════════════════════════════════╝
+EOF
+
+echo ""
+echo -e "${BOLD}${BLUE}━━━ 最常用快捷鍵（只需記這 5 個！）━━━${RESET}"
+echo ""
+echo -e "  ${ORANGE}Cmd + T${RESET}          開新 Tab（新任務）"
+echo -e "  ${ORANGE}Cmd + 1/2/3${RESET}      快速切換 Tab（最常用！）"
+echo -e "  ${ORANGE}Cmd + D${RESET}          並排分割視窗（比較 AI 輸出）"
+echo -e "  ${ORANGE}Ctrl + Space + ?${RESET} 顯示完整幫助"
+echo -e "  ${ORANGE}tmux-launch${RESET}      啟動預設布局"
+
+echo ""
+echo -e "${BOLD}${PURPLE}━━━ Ghostty 快捷鍵（直接使用，無需 Prefix）━━━${RESET}"
+echo ""
+echo -e "  ${GREEN}Tab 管理${RESET}"
+echo "    Cmd + T                 新建 Tab"
+echo "    Cmd + W                 關閉 Tab"
+echo "    Cmd + 1/2/3...9         跳轉到指定 Tab"
+echo "    Cmd + Shift + ]         下一個 Tab"
+echo "    Cmd + Shift + [         上一個 Tab"
+echo ""
+echo -e "  ${GREEN}視窗分割${RESET}"
+echo "    Cmd + D                 向右分割"
+echo "    Cmd + Shift + D         向下分割"
+echo ""
+echo -e "  ${GREEN}系統功能${RESET}"
+echo "    Cmd + Shift + ,         重新載入配置"
+
+echo ""
+echo -e "${BOLD}${PURPLE}━━━ Tmux 快捷鍵（需要先按 Ctrl+Space）━━━${RESET}"
+echo ""
+echo -e "  ${YELLOW}基本操作${RESET}"
+echo "    Ctrl + Space            Prefix（啟動 Tmux）"
+echo "    ?                       顯示完整幫助"
+echo "    r                       重新載入配置"
+echo ""
+echo -e "  ${YELLOW}Pane 管理${RESET}"
+echo "    |                       向右分割"
+echo "    -                       向下分割"
+echo "    h/j/k/l                 Vim 導航（左/下/上/右）"
+echo "    1/2/3/4/5               跳轉到 pane 1~5"
+echo "    z                       全屏/還原 pane"
+echo ""
+echo -e "  ${YELLOW}Pane 大小調整${RESET}"
+echo "    H/J/K/L                 調整 pane 大小"
+
+echo ""
+echo -e "${BOLD}${GREEN}━━━ 常用工作流程 ━━━${RESET}"
+echo ""
+echo "  1️⃣  Claude Code + Codex 並行"
+echo "      → Cmd+T 開新 tab → Cmd+1/2 切換"
+echo ""
+echo "  2️⃣  AI 輸出比較"
+echo "      → Cmd+D 分割視窗 → 左右並排"
+echo ""
+echo "  3️⃣  多專案管理"
+echo "      → Cmd+T 多個 tab → Cmd+數字鍵跳轉"
+echo ""
+echo "  4️⃣  預設布局啟動"
+echo "      → 終端執行 tmux-launch → 選擇布局"
+
+echo ""
+echo -e "${BOLD}${ORANGE}━━━ Tmux 布局腳本 ━━━${RESET}"
+echo ""
+echo "  tmux-launch              互動式選單（推薦）"
+echo "  ai-workspace.sh          AI 工作空間（70/30 布局）"
+echo "  ai-compare.sh            AI 比較模式（50/50 並排）"
+echo "  full-focus.sh            全屏專注模式"
+
+echo ""
+echo -e "${BOLD}💡 小技巧${RESET}"
+echo ""
+echo "  • 在 Tmux 內按 ${ORANGE}Ctrl+Space ?${RESET} 可隨時查看快捷鍵"
+echo "  • Status bar 底部也顯示了常用快捷鍵提示"
+echo "  • 執行 ${ORANGE}vibe-help${RESET} 隨時查看這個幫助"
+echo "  • 大部分情況下只需要用 Ghostty 的 ${ORANGE}Cmd+數字${RESET} 就夠了"
+echo ""
+echo "════════════════════════════════════════════════════════════"
+echo ""

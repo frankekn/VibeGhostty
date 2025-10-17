@@ -1,0 +1,122 @@
+# ═══════════════════════════════════════════════════════════════
+# Ghostty 配置 - 多 AI Agent 協作優化版本
+# 專為 Claude Code, Codex CLI 等工具設計
+# ═══════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────
+# 字體設定 - 清晰度與符號支援
+# ─────────────────────────────────────────────────────────────
+font-family = JetBrains Mono
+font-size = 13
+font-thicken = true
+adjust-cell-height = 15%
+
+# ─────────────────────────────────────────────────────────────
+# 配色方案 - Tokyo Night Storm（護眼深色主題）
+# ─────────────────────────────────────────────────────────────
+background = 24283b
+foreground = c0caf5
+
+# Cursor 設定
+cursor-color = ff9e64
+cursor-style = block
+cursor-style-blink = false
+
+# 選取範圍顏色
+selection-background = 364a82
+selection-foreground = c0caf5
+
+# ANSI 色彩
+palette = 0=#1d202f
+palette = 1=#f7768e
+palette = 2=#9ece6a
+palette = 3=#e0af68
+palette = 4=#7aa2f7
+palette = 5=#bb9af7
+palette = 6=#7dcfff
+palette = 7=#a9b1d6
+palette = 8=#414868
+palette = 9=#f7768e
+palette = 10=#9ece6a
+palette = 11=#e0af68
+palette = 12=#7aa2f7
+palette = 13=#bb9af7
+palette = 14=#7dcfff
+palette = 15=#c0caf5
+
+# ─────────────────────────────────────────────────────────────
+# 視窗設定
+# ─────────────────────────────────────────────────────────────
+window-padding-x = 8
+window-padding-y = 8
+window-padding-balance = true
+
+# ─────────────────────────────────────────────────────────────
+# 效能設定
+# ─────────────────────────────────────────────────────────────
+scrollback-limit = 50000
+
+# ─────────────────────────────────────────────────────────────
+# AI 協作功能
+# ─────────────────────────────────────────────────────────────
+copy-on-select = clipboard
+shell-integration = detect
+shell-integration-features = cursor,sudo,title
+
+# ─────────────────────────────────────────────────────────────
+# 快捷鍵
+# ─────────────────────────────────────────────────────────────
+# Tab 管理
+keybind = super+t=new_tab
+keybind = super+w=close_surface
+keybind = super+shift+t=new_window
+
+# Tab 切換 (Cmd+1~9)
+keybind = super+1=goto_tab:1
+keybind = super+2=goto_tab:2
+keybind = super+3=goto_tab:3
+keybind = super+4=goto_tab:4
+keybind = super+5=goto_tab:5
+keybind = super+6=goto_tab:6
+keybind = super+7=goto_tab:7
+keybind = super+8=goto_tab:8
+keybind = super+9=goto_tab:9
+
+# Tab 循環切換
+keybind = super+shift+right_bracket=next_tab
+keybind = super+shift+left_bracket=previous_tab
+
+# Split 管理
+keybind = super+d=new_split:right
+keybind = super+shift+d=new_split:down
+
+# 重新載入配置
+keybind = super+shift+comma=reload_config
+
+# ─────────────────────────────────────────────────────────────
+# macOS 設定
+# ─────────────────────────────────────────────────────────────
+macos-titlebar-style = tabs
+macos-option-as-alt = true
+auto-update = check
+
+# ═══════════════════════════════════════════════════════════════
+# 使用說明
+# ═══════════════════════════════════════════════════════════════
+#
+# 快捷鍵速查：
+#   Cmd+T         - 新 tab
+#   Cmd+W         - 關閉 tab
+#   Cmd+1~9       - 跳轉到指定 tab
+#   Cmd+D         - 向右分割
+#   Cmd+Shift+D   - 向下分割
+#   Cmd+F         - 搜尋
+#   Cmd+Shift+,   - 重新載入配置
+#
+# 工作流程：
+#   Tab 1: Claude Code
+#   Tab 2: Codex CLI
+#   Tab 3: 測試/監控
+#
+# 字體已調整為 13pt，如需更小可改為 12
+# ═══════════════════════════════════════════════════════════════
