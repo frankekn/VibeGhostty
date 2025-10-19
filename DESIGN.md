@@ -1279,6 +1279,13 @@ Error in Pane 2 (Dev Server):
 選擇 [1-4]: █
 ```
 
+### 快速切換與臨時控制視窗
+
+- 在 tmux 中綁定 `prefix + m` 觸發 `display-menu`，列出常用模式（例如 `dev`、`debug`、`review`）。
+- 使用者選擇後，臨時執行 `split-window -v -p 20 -b -c "#{pane_current_path}" zsh`（或 `new-window`）建立短暫控制終端。
+- 在該控制 pane/window 內執行 `vibe-start --mode <選項>` 以重建或切換 session，完成後自動 `kill-pane`/`kill-window` 清理。
+- 原布局不需預留固定控制 pane，僅在需要時才呼叫終端，維持視覺整潔並提供可選的快速模式切換。
+
 ---
 
 ## 實施路線圖
