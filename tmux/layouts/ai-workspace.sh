@@ -6,14 +6,17 @@
 #
 # Layout Design:
 # ┌─────────────────────────┬─────────────┐
-# │   Codex CLI (主要)      │  Claude     │
-# │   70%                   │  Code       │
-# │                         │  30%        │
+# │   主要工作區            │  輔助工具   │
+# │   70%                   │  30%        │
 # │                         ├─────────────┤
-# │                         │ Monitor     │
-# │                         │ (Tests/Logs)│
+# │                         │ 監控/測試   │
 # │                         │  30%        │
 # └─────────────────────────┴─────────────┘
+#
+# 用途範例（可自由調整）：
+# • 主工作區：AI 工具、編輯器、後端開發
+# • 輔助工具：另一個 AI、前端開發、快速任務
+# • 監控窗格：測試、日誌、系統監控、開發伺服器
 #
 # Usage:
 #   ./ai-workspace.sh [project_dir]
@@ -189,24 +192,24 @@ tmux select-pane -t "${SESSION_NAME}:1.3" -T "📊 Monitor"
 tmux send-keys -t "$SESSION_NAME:1.3" "clear" C-m
 tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
 tmux send-keys -t "$SESSION_NAME:1.3" "echo '╔════════════════════════════════════╗'" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '║     📊 Monitor Pane 使用說明      ║'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '║     📊 輔助窗格               ║'" C-m
 tmux send-keys -t "$SESSION_NAME:1.3" "echo '╚════════════════════════════════════╝'" C-m
 tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '此窗格用於監控和日誌：'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '此窗格用途由您自由決定，例如：'" C-m
 tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '  🧪 執行測試：'" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '     npm test --watch'" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '     pytest -v --watch'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '  🧪 測試監控：'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '     npm test --watch / pytest -v'" C-m
 tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '  📋 檢視日誌：'" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '     tail -f app.log'" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '     docker logs -f container'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '  📋 日誌追蹤：'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '     tail -f app.log / docker logs -f'" C-m
 tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
 tmux send-keys -t "$SESSION_NAME:1.3" "echo '  🔍 系統監控：'" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '     htop'" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '     watch -n 1 \"ps aux | grep node\"'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '     htop / watch ps'" C-m
 tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '💡 按 Ctrl+Space 然後按 3 快速跳到這裡'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '  ⚡ 快速指令：'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '     git status / npm run dev'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '💡 Ctrl+Space 3 快速跳轉到此窗格'" C-m
 tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
 
 # ───────────────────────────────────────────────────────

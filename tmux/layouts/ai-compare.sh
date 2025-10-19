@@ -6,11 +6,17 @@
 #
 # Layout Design:
 # ┌────────────────┬────────────────┐
-# │  Codex CLI     │  Claude Code   │
+# │  左側窗格      │  右側窗格      │
 # │  50%           │  50%           │
 # ├────────────────┴────────────────┤
-# │  Compare/Monitor (25%)          │
+# │  輔助窗格 (25%)                 │
 # └─────────────────────────────────┘
+#
+# 用途範例（可自由調整）：
+# • 前端/後端分離：左側前端開發，右側後端 API
+# • 多工具協作：左側 AI 工具，右側編輯器
+# • 並排比較：左右窗格執行不同工具比較輸出
+# • 輔助窗格：測試執行、日誌監控、指令輸入
 #
 # Usage:
 #   ./ai-compare.sh [project_dir]
@@ -177,20 +183,20 @@ tmux select-pane -t "${SESSION_NAME}:1.3" -T "⚖️  Compare"
 tmux send-keys -t "$SESSION_NAME:1.3" "clear" C-m
 tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
 tmux send-keys -t "$SESSION_NAME:1.3" "echo '╔════════════════════════════════════════════╗'" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '║     ⚖️  Compare 窗格使用說明            ║'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '║     ⚖️  輔助窗格                      ║'" C-m
 tmux send-keys -t "$SESSION_NAME:1.3" "echo '╚════════════════════════════════════════════╝'" C-m
 tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '此模式用於比較兩個 AI 的輸出：'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '50/50 並排布局，適合多種工作流程：'" C-m
 tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '  📝 比較程式碼風格'" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '  🔍 比較解決方案品質'" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '  ⚡比較執行效能'" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '  🧪 執行測試驗證'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '  💡 建議用途（可自由調整）：'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '     • 前端/後端分離開發'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '     • 不同任務平行處理'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '     • 並排比較輸出結果'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '     • 同時執行多個工具'" C-m
 tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '常用指令：'" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '  diff output1.txt output2.txt'" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '  git diff branch1 branch2'" C-m
-tmux send-keys -t "$SESSION_NAME:1.3" "echo '  vimdiff file1 file2'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '  🛠️  常用指令範例：'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '     diff / git diff / vimdiff'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '     npm test / pytest / cargo test'" C-m
 tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
 
 # ───────────────────────────────────────────────────────
