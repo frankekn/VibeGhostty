@@ -145,76 +145,76 @@ echo "📁 專案目錄: $PROJECT_DIR"
 tmux new-session -d -s "$SESSION_NAME" -c "$PROJECT_DIR"
 
 # ───────────────────────────────────────────────────────
-# Setup Pane 0: 主要 AI 工具 (左側 70%)
+# Setup Pane 1: 主要 AI 工具 (左側 70%)
 # ───────────────────────────────────────────────────────
 
 # 設定標題
-tmux select-pane -t "${SESSION_NAME}:0.0" -T "🔧 ${AI_PRIMARY^}"
+tmux select-pane -t "${SESSION_NAME}:1.1" -T "🔧 ${AI_PRIMARY^}"
 
 # 啟動主要 AI 工具
 if [[ "$PRIMARY_AVAILABLE" == true ]]; then
-    tmux send-keys -t "${SESSION_NAME}:0.0" "$AI_PRIMARY" C-m
+    tmux send-keys -t "${SESSION_NAME}:1.1" "$AI_PRIMARY" C-m
 else
-    tmux send-keys -t "${SESSION_NAME}:0.0" "echo '⚠️  $AI_PRIMARY 未安裝，請先安裝後再執行'" C-m
+    tmux send-keys -t "${SESSION_NAME}:1.1" "echo '⚠️  $AI_PRIMARY 未安裝，請先安裝後再執行'" C-m
 fi
 
 # ───────────────────────────────────────────────────────
-# Create Pane 1: 輔助 AI 工具 (右上 30%)
+# Create Pane 2: 輔助 AI 工具 (右上 30%)
 # ───────────────────────────────────────────────────────
 
 # 垂直分割右側（30% 寬度）
-tmux split-window -h -p 30 -t "$SESSION_NAME:0" -c "$PROJECT_DIR"
+tmux split-window -h -p 30 -t "$SESSION_NAME:1" -c "$PROJECT_DIR"
 
 # 設定標題
-tmux select-pane -t "${SESSION_NAME}:0.1" -T "🤖 ${AI_SECONDARY^}"
+tmux select-pane -t "${SESSION_NAME}:1.2" -T "🤖 ${AI_SECONDARY^}"
 
 # 啟動輔助 AI 工具
 if [[ "$SECONDARY_AVAILABLE" == true ]]; then
-    tmux send-keys -t "${SESSION_NAME}:0.1" "$AI_SECONDARY" C-m
+    tmux send-keys -t "${SESSION_NAME}:1.2" "$AI_SECONDARY" C-m
 else
-    tmux send-keys -t "${SESSION_NAME}:0.1" "echo '⚠️  $AI_SECONDARY 未安裝，請先安裝後再執行'" C-m
+    tmux send-keys -t "${SESSION_NAME}:1.2" "echo '⚠️  $AI_SECONDARY 未安裝，請先安裝後再執行'" C-m
 fi
 
 # ───────────────────────────────────────────────────────
-# Create Pane 2: Monitor (右下 30%)
+# Create Pane 3: Monitor (右下 30%)
 # ───────────────────────────────────────────────────────
 
 # 在右側 pane 下方再分割（50% 高度）
-tmux split-window -v -p 50 -t "$SESSION_NAME:0.1" -c "$PROJECT_DIR"
+tmux split-window -v -p 50 -t "$SESSION_NAME:1.2" -c "$PROJECT_DIR"
 
 # 設定標題
-tmux select-pane -t "${SESSION_NAME}:0.2" -T "📊 Monitor"
+tmux select-pane -t "${SESSION_NAME}:1.3" -T "📊 Monitor"
 
 # 顯示提示訊息（不自動執行程式）
-tmux send-keys -t "$SESSION_NAME:0.2" "clear" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo ''" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '╔════════════════════════════════════╗'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '║     📊 Monitor Pane 使用說明      ║'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '╚════════════════════════════════════╝'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo ''" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '此 pane 用於監控和日誌：'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo ''" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '  🧪 執行測試：'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '     npm test --watch'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '     pytest -v --watch'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo ''" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '  📋 檢視日誌：'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '     tail -f app.log'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '     docker logs -f container'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo ''" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '  🔍 系統監控：'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '     htop'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '     watch -n 1 \"ps aux | grep node\"'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo ''" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '💡 按 Ctrl+Space 然後按 3 快速跳到這裡'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo ''" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "clear" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '╔════════════════════════════════════╗'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '║     📊 Monitor Pane 使用說明      ║'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '╚════════════════════════════════════╝'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '此窗格用於監控和日誌：'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '  🧪 執行測試：'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '     npm test --watch'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '     pytest -v --watch'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '  📋 檢視日誌：'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '     tail -f app.log'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '     docker logs -f container'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '  🔍 系統監控：'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '     htop'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '     watch -n 1 \"ps aux | grep node\"'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '💡 按 Ctrl+Space 然後按 3 快速跳到這裡'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
 
 # ───────────────────────────────────────────────────────
 # Final Setup
 # ───────────────────────────────────────────────────────
 
 # 回到 Codex CLI pane（主工作區）
-tmux select-pane -t "${SESSION_NAME}:0.0"
+tmux select-pane -t "${SESSION_NAME}:1.1"
 
 # 連接到 session
 echo "✅ Session 建立完成！正在連接..."

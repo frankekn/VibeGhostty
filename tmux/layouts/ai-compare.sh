@@ -135,70 +135,70 @@ echo "📁 專案目錄: $PROJECT_DIR"
 tmux new-session -d -s "$SESSION_NAME" -c "$PROJECT_DIR"
 
 # ───────────────────────────────────────────────────────
-# Pane 0: 左側 AI 工具 (50%)
+# Pane 1: 左側 AI 工具 (50%)
 # ───────────────────────────────────────────────────────
 
 # 設定標題
-tmux select-pane -t 0 -T "🔧 ${AI_LEFT^}"
+tmux select-pane -t "${SESSION_NAME}:1.1" -T "🔧 ${AI_LEFT^}"
 
 # 啟動左側 AI 工具
 if [[ "$LEFT_AVAILABLE" == true ]]; then
-    tmux send-keys -t "$SESSION_NAME:0.0" "$AI_LEFT" C-m
+    tmux send-keys -t "${SESSION_NAME}:1.1" "$AI_LEFT" C-m
 else
-    tmux send-keys -t "$SESSION_NAME:0.0" "echo '⚠️  $AI_LEFT 未安裝，請先安裝後再執行'" C-m
+    tmux send-keys -t "${SESSION_NAME}:1.1" "echo '⚠️  $AI_LEFT 未安裝，請先安裝後再執行'" C-m
 fi
 
 # ───────────────────────────────────────────────────────
-# Pane 1: 右側 AI 工具 (50%)
+# Pane 2: 右側 AI 工具 (50%)
 # ───────────────────────────────────────────────────────
 
-tmux split-window -h -p 50 -t "$SESSION_NAME:0" -c "$PROJECT_DIR"
+tmux split-window -h -p 50 -t "$SESSION_NAME:1" -c "$PROJECT_DIR"
 
 # 設定標題
-tmux select-pane -t 1 -T "🤖 ${AI_RIGHT^}"
+tmux select-pane -t "${SESSION_NAME}:1.2" -T "🤖 ${AI_RIGHT^}"
 
 # 啟動右側 AI 工具
 if [[ "$RIGHT_AVAILABLE" == true ]]; then
-    tmux send-keys -t "$SESSION_NAME:0.1" "$AI_RIGHT" C-m
+    tmux send-keys -t "${SESSION_NAME}:1.2" "$AI_RIGHT" C-m
 else
-    tmux send-keys -t "$SESSION_NAME:0.1" "echo '⚠️  $AI_RIGHT 未安裝，請先安裝後再執行'" C-m
+    tmux send-keys -t "${SESSION_NAME}:1.2" "echo '⚠️  $AI_RIGHT 未安裝，請先安裝後再執行'" C-m
 fi
 
 # ───────────────────────────────────────────────────────
-# Pane 2: Compare/Monitor (下方 25%)
+# Pane 3: Compare/Monitor (下方 25%)
 # ───────────────────────────────────────────────────────
 
-# 選擇 pane 0，在下方分割
-tmux select-pane -t 0
-tmux split-window -v -p 25 -t "$SESSION_NAME:0.0" -c "$PROJECT_DIR"
-tmux select-pane -t 2 -T "⚖️  Compare"
+# 選擇 pane 1，在下方分割
+tmux select-pane -t "${SESSION_NAME}:1.1"
+tmux split-window -v -p 25 -t "$SESSION_NAME:1.1" -c "$PROJECT_DIR"
+tmux select-pane -t "${SESSION_NAME}:1.3" -T "⚖️  Compare"
 
 # 顯示提示
-tmux send-keys -t "$SESSION_NAME:0.2" "clear" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo ''" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '╔════════════════════════════════════════════╗'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '║     ⚖️  Compare Pane 使用說明            ║'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '╚════════════════════════════════════════════╝'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo ''" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '此模式用於比較兩個 AI 的輸出：'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo ''" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '  📝 比較程式碼風格'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '  🔍 比較解決方案品質'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '  ⚡ 比較執行效能'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '  🧪 執行測試驗證'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo ''" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '常用指令：'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '  diff output1.txt output2.txt'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '  git diff branch1 branch2'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo '  vimdiff file1 file2'" C-m
-tmux send-keys -t "$SESSION_NAME:0.2" "echo ''" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "clear" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '╔════════════════════════════════════════════╗'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '║     ⚖️  Compare 窗格使用說明            ║'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '╚════════════════════════════════════════════╝'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '此模式用於比較兩個 AI 的輸出：'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '  📝 比較程式碼風格'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '  🔍 比較解決方案品質'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '  ⚡比較執行效能'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '  🧪 執行測試驗證'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '常用指令：'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '  diff output1.txt output2.txt'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '  git diff branch1 branch2'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo '  vimdiff file1 file2'" C-m
+tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
 
 # ───────────────────────────────────────────────────────
 # Final Setup
 # ───────────────────────────────────────────────────────
 
 # 回到 Codex pane
-tmux select-pane -t 0
+tmux select-pane -t "${SESSION_NAME}:1.1"
 
 echo "✅ Compare session 建立完成！"
 sleep 1

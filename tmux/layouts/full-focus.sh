@@ -163,14 +163,14 @@ tmux new-session -d -s "$SESSION_NAME" -c "$PROJECT_DIR"
 # Setup Full Screen Pane
 # ───────────────────────────────────────────────────────
 
-tmux select-pane -t 0 -T "$AI_EMOJI $AI_NAME (Focus Mode)"
+tmux select-pane -t "${SESSION_NAME}:1.1" -T "$AI_EMOJI $AI_NAME (Focus Mode)"
 
 # 啟動選擇的 AI（或顯示錯誤訊息）
 if [[ "$AI_AVAILABLE" == true ]]; then
-    tmux send-keys -t "$SESSION_NAME:0.0" "$AI_COMMAND" C-m
+    tmux send-keys -t "${SESSION_NAME}:1.1" "$AI_COMMAND" C-m
 else
-    tmux send-keys -t "$SESSION_NAME:0.0" "echo '⚠️  $AI_COMMAND 未安裝，請先安裝後再執行'" C-m
-    tmux send-keys -t "$SESSION_NAME:0.0" "echo '   安裝方法請參考上方提示'" C-m
+    tmux send-keys -t "${SESSION_NAME}:1.1" "echo '⚠️  $AI_COMMAND 未安裝，請先安裝後再執行'" C-m
+    tmux send-keys -t "${SESSION_NAME}:1.1" "echo '   安裝方法請參考上方提示'" C-m
 fi
 
 # ───────────────────────────────────────────────────────
