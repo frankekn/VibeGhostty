@@ -29,6 +29,10 @@ set -e  # 遇到錯誤立即停止
 SESSION_NAME="ai-work"
 PROJECT_DIR="${1:-$PWD}"
 
+# AI 工具配置（支援環境變數自訂）
+AI_PRIMARY="${VIBE_AI_PRIMARY:-codex}"
+AI_SECONDARY="${VIBE_AI_SECONDARY:-claude}"
+
 # 確保專案目錄存在
 if [[ ! -d "$PROJECT_DIR" ]]; then
     echo "❌ 錯誤：專案目錄不存在 '$PROJECT_DIR'"
@@ -40,6 +44,66 @@ if [[ -d "$PROJECT_DIR/.git" ]]; then
     REPO_NAME=$(basename "$PROJECT_DIR")
     SESSION_NAME="ai-${REPO_NAME}"
 fi
+
+# ───────────────────────────────────────────────────────
+# Check Tools
+# ───────────────────────────────────────────────────────
+
+check_tool() {
+    local tool="$1"
+    if ! command -v "$tool" &>/dev/null; then
+        echo "⚠️  警告：'$tool' 未安裝"
+        echo "   安裝方法："
+        case "$tool" in
+            codex)
+                echo "     npm install -g @codexhq/cli"
+                ;;
+            claude)
+                echo "     從 https://claude.com/code 下載"
+                ;;
+            *)
+                echo "     請查閱工具文檔"
+                ;;
+        esac
+        return 1
+    fi
+    return 0
+}
+
+# 檢查主要工具
+PRIMARY_AVAILABLE=false
+SECONDARY_AVAILABLE=false
+
+if check_tool "$AI_PRIMARY"; then
+    PRIMARY_AVAILABLE=true
+fi
+
+echo ""
+
+if check_tool "$AI_SECONDARY"; then
+    SECONDARY_AVAILABLE=true
+fi
+
+# 如果兩個工具都不存在，詢問是否繼續
+if [[ "$PRIMARY_AVAILABLE" == false && "$SECONDARY_AVAILABLE" == false ]]; then
+    echo ""
+    echo "❌ 錯誤：沒有可用的 AI 工具"
+    echo "   請至少安裝 $AI_PRIMARY 或 $AI_SECONDARY"
+    exit 1
+fi
+
+# 如果只有一個工具不存在，詢問是否繼續
+if [[ "$PRIMARY_AVAILABLE" == false || "$SECONDARY_AVAILABLE" == false ]]; then
+    echo ""
+    echo "是否繼續建立 session？ [Y/n]: "
+    read -r confirm
+    if [[ "$confirm" == "n" || "$confirm" == "N" ]]; then
+        echo "❌ 已取消"
+        exit 0
+    fi
+fi
+
+echo ""
 
 # ───────────────────────────────────────────────────────
 # Check if session already exists
@@ -81,27 +145,35 @@ echo "📁 專案目錄: $PROJECT_DIR"
 tmux new-session -d -s "$SESSION_NAME" -c "$PROJECT_DIR"
 
 # ───────────────────────────────────────────────────────
-# Setup Pane 0: Codex CLI (左側 70%)
+# Setup Pane 0: 主要 AI 工具 (左側 70%)
 # ───────────────────────────────────────────────────────
 
 # 設定標題
-tmux select-pane -t "${SESSION_NAME}:0.0" -T "🔧 Codex CLI"
+tmux select-pane -t "${SESSION_NAME}:0.0" -T "🔧 ${AI_PRIMARY^}"
 
-# 啟動 Codex
-tmux send-keys -t "${SESSION_NAME}:0.0" "codex" C-m
+# 啟動主要 AI 工具
+if [[ "$PRIMARY_AVAILABLE" == true ]]; then
+    tmux send-keys -t "${SESSION_NAME}:0.0" "$AI_PRIMARY" C-m
+else
+    tmux send-keys -t "${SESSION_NAME}:0.0" "echo '⚠️  $AI_PRIMARY 未安裝，請先安裝後再執行'" C-m
+fi
 
 # ───────────────────────────────────────────────────────
-# Create Pane 1: Claude Code (右上 30%)
+# Create Pane 1: 輔助 AI 工具 (右上 30%)
 # ───────────────────────────────────────────────────────
 
 # 垂直分割右側（30% 寬度）
 tmux split-window -h -p 30 -t "$SESSION_NAME:0" -c "$PROJECT_DIR"
 
 # 設定標題
-tmux select-pane -t "${SESSION_NAME}:0.1" -T "🤖 Claude Code"
+tmux select-pane -t "${SESSION_NAME}:0.1" -T "🤖 ${AI_SECONDARY^}"
 
-# 啟動 Claude Code
-tmux send-keys -t "${SESSION_NAME}:0.1" "claude" C-m
+# 啟動輔助 AI 工具
+if [[ "$SECONDARY_AVAILABLE" == true ]]; then
+    tmux send-keys -t "${SESSION_NAME}:0.1" "$AI_SECONDARY" C-m
+else
+    tmux send-keys -t "${SESSION_NAME}:0.1" "echo '⚠️  $AI_SECONDARY 未安裝，請先安裝後再執行'" C-m
+fi
 
 # ───────────────────────────────────────────────────────
 # Create Pane 2: Monitor (右下 30%)
