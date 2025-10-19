@@ -148,30 +148,32 @@ echo "📁 專案目錄: $PROJECT_DIR"
 tmux new-session -d -s "$SESSION_NAME" -c "$PROJECT_DIR"
 
 # ───────────────────────────────────────────────────────
-# Setup Pane 1: 主要 AI 工具 (左側 70%)
+# Step 1: 創建所有 pane（先不啟動程式）
 # ───────────────────────────────────────────────────────
 
-# 設定標題
+# Pane 1.1: 主要工作區 (左側 70%)
 tmux select-pane -t "${SESSION_NAME}:1.1" -T "🔧 ${AI_PRIMARY^}"
 
-# 啟動主要 AI 工具
+# Pane 1.2: 輔助工具 (右上 30%) - 水平分割
+tmux split-window -h -p 30 -t "$SESSION_NAME:1" -c "$PROJECT_DIR"
+tmux select-pane -t "${SESSION_NAME}:1.2" -T "🤖 ${AI_SECONDARY^}"
+
+# Pane 1.3: 監控窗格 (右下 30%) - 垂直分割右側
+tmux split-window -v -p 50 -t "$SESSION_NAME:1.2" -c "$PROJECT_DIR"
+tmux select-pane -t "${SESSION_NAME}:1.3" -T "📊 Monitor"
+
+# ───────────────────────────────────────────────────────
+# Step 2: 啟動程式（所有 pane 已就位，大小固定）
+# ───────────────────────────────────────────────────────
+
+# 啟動主要 AI 工具 (pane 1.1)
 if [[ "$PRIMARY_AVAILABLE" == true ]]; then
     tmux send-keys -t "${SESSION_NAME}:1.1" "$AI_PRIMARY" C-m
 else
     tmux send-keys -t "${SESSION_NAME}:1.1" "echo '⚠️  $AI_PRIMARY 未安裝，請先安裝後再執行'" C-m
 fi
 
-# ───────────────────────────────────────────────────────
-# Create Pane 2: 輔助 AI 工具 (右上 30%)
-# ───────────────────────────────────────────────────────
-
-# 垂直分割右側（30% 寬度）
-tmux split-window -h -p 30 -t "$SESSION_NAME:1" -c "$PROJECT_DIR"
-
-# 設定標題
-tmux select-pane -t "${SESSION_NAME}:1.2" -T "🤖 ${AI_SECONDARY^}"
-
-# 啟動輔助 AI 工具
+# 啟動輔助 AI 工具 (pane 1.2)
 if [[ "$SECONDARY_AVAILABLE" == true ]]; then
     tmux send-keys -t "${SESSION_NAME}:1.2" "$AI_SECONDARY" C-m
 else
@@ -179,14 +181,8 @@ else
 fi
 
 # ───────────────────────────────────────────────────────
-# Create Pane 3: Monitor (右下 30%)
+# Step 3: 設定監控窗格內容
 # ───────────────────────────────────────────────────────
-
-# 在右側 pane 下方再分割（50% 高度）
-tmux split-window -v -p 50 -t "$SESSION_NAME:1.2" -c "$PROJECT_DIR"
-
-# 設定標題
-tmux select-pane -t "${SESSION_NAME}:1.3" -T "📊 Monitor"
 
 # 顯示提示訊息（不自動執行程式）
 tmux send-keys -t "$SESSION_NAME:1.3" "clear" C-m

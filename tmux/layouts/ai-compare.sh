@@ -141,29 +141,33 @@ echo "📁 專案目錄: $PROJECT_DIR"
 tmux new-session -d -s "$SESSION_NAME" -c "$PROJECT_DIR"
 
 # ───────────────────────────────────────────────────────
-# Pane 1: 左側 AI 工具 (50%)
+# Step 1: 創建所有 pane（先不啟動程式）
 # ───────────────────────────────────────────────────────
 
-# 設定標題
+# Pane 1.1: 左側 (50%)
 tmux select-pane -t "${SESSION_NAME}:1.1" -T "🔧 ${AI_LEFT^}"
 
-# 啟動左側 AI 工具
+# Pane 1.2: 右側 (50%) - 水平分割
+tmux split-window -h -p 50 -t "$SESSION_NAME:1" -c "$PROJECT_DIR"
+tmux select-pane -t "${SESSION_NAME}:1.2" -T "🤖 ${AI_RIGHT^}"
+
+# Pane 1.3: 底部 (25%) - 垂直分割左側
+tmux select-pane -t "${SESSION_NAME}:1.1"
+tmux split-window -v -p 25 -t "$SESSION_NAME:1.1" -c "$PROJECT_DIR"
+tmux select-pane -t "${SESSION_NAME}:1.3" -T "⚖️  Compare"
+
+# ───────────────────────────────────────────────────────
+# Step 2: 啟動程式（所有 pane 已就位，大小固定）
+# ───────────────────────────────────────────────────────
+
+# 啟動左側 AI 工具 (pane 1.1)
 if [[ "$LEFT_AVAILABLE" == true ]]; then
     tmux send-keys -t "${SESSION_NAME}:1.1" "$AI_LEFT" C-m
 else
     tmux send-keys -t "${SESSION_NAME}:1.1" "echo '⚠️  $AI_LEFT 未安裝，請先安裝後再執行'" C-m
 fi
 
-# ───────────────────────────────────────────────────────
-# Pane 2: 右側 AI 工具 (50%)
-# ───────────────────────────────────────────────────────
-
-tmux split-window -h -p 50 -t "$SESSION_NAME:1" -c "$PROJECT_DIR"
-
-# 設定標題
-tmux select-pane -t "${SESSION_NAME}:1.2" -T "🤖 ${AI_RIGHT^}"
-
-# 啟動右側 AI 工具
+# 啟動右側 AI 工具 (pane 1.2)
 if [[ "$RIGHT_AVAILABLE" == true ]]; then
     tmux send-keys -t "${SESSION_NAME}:1.2" "$AI_RIGHT" C-m
 else
@@ -171,13 +175,8 @@ else
 fi
 
 # ───────────────────────────────────────────────────────
-# Pane 3: Compare/Monitor (下方 25%)
+# Step 3: 設定底部輔助窗格內容
 # ───────────────────────────────────────────────────────
-
-# 選擇 pane 1，在下方分割
-tmux select-pane -t "${SESSION_NAME}:1.1"
-tmux split-window -v -p 25 -t "$SESSION_NAME:1.1" -c "$PROJECT_DIR"
-tmux select-pane -t "${SESSION_NAME}:1.3" -T "⚖️  Compare"
 
 # 顯示提示
 tmux send-keys -t "$SESSION_NAME:1.3" "clear" C-m
