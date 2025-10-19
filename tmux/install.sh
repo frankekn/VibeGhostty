@@ -35,6 +35,24 @@ print_header() {
     echo ""
 }
 
+# 版本比較函數
+# 使用方法: version_gte "3.2" "3.0" 會返回 true
+version_gte() {
+    local current="$1"
+    local required="$2"
+
+    # 移除非數字字符（除了點）
+    current=$(echo "$current" | sed 's/[^0-9.]//g')
+    required=$(echo "$required" | sed 's/[^0-9.]//g')
+
+    # 使用 sort -V 進行版本比較
+    if printf '%s\n%s\n' "$required" "$current" | sort -V -C; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 print_step() {
     echo -e "${CYAN}${BOLD}▶ $1${RESET}"
 }
@@ -60,6 +78,8 @@ print_header
 # Step 1: Check if tmux is installed
 print_step "Checking tmux installation..."
 
+REQUIRED_TMUX_VERSION="3.0"
+
 if ! command -v tmux &> /dev/null; then
     print_warning "tmux is not installed"
 
@@ -74,8 +94,21 @@ if ! command -v tmux &> /dev/null; then
         exit 1
     fi
 else
-    TMUX_VERSION=$(tmux -V)
+    TMUX_VERSION=$(tmux -V | awk '{print $2}')
     print_success "tmux detected: $TMUX_VERSION"
+
+    # 檢查版本是否符合要求
+    if ! version_gte "$TMUX_VERSION" "$REQUIRED_TMUX_VERSION"; then
+        print_warning "tmux version $TMUX_VERSION is below recommended $REQUIRED_TMUX_VERSION"
+        echo "Some features may not work correctly"
+        echo "Upgrade: brew upgrade tmux"
+        echo ""
+        read -p "Continue anyway? [y/N]: " continue_install
+        if [[ "$continue_install" != "y" && "$continue_install" != "Y" ]]; then
+            print_error "Installation cancelled"
+            exit 1
+        fi
+    fi
 fi
 
 echo ""
@@ -93,6 +126,29 @@ if command -v claude &> /dev/null; then
     print_success "Claude Code detected"
 else
     print_warning "Claude Code not found (optional)"
+fi
+
+echo ""
+
+# Step 2.5: Check Git (required for TPM)
+print_step "Checking Git installation..."
+
+REQUIRED_GIT_VERSION="2.0"
+
+if ! command -v git &> /dev/null; then
+    print_error "Git is not installed"
+    echo "Git is required for TPM (tmux plugin manager)"
+    echo "Install: brew install git"
+    exit 1
+else
+    GIT_VERSION=$(git --version | awk '{print $3}')
+    print_success "Git detected: $GIT_VERSION"
+
+    # 檢查版本
+    if ! version_gte "$GIT_VERSION" "$REQUIRED_GIT_VERSION"; then
+        print_warning "Git version $GIT_VERSION is below recommended $REQUIRED_GIT_VERSION"
+        echo "Upgrade: brew upgrade git"
+    fi
 fi
 
 echo ""
@@ -126,15 +182,55 @@ echo ""
 # Step 5: Get the script directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+# Step 5.5: Create backup directory
+BACKUP_DIR="$HOME/.vibeghostty-backups/backup-$(date +%Y%m%d_%H%M%S)"
+
+print_step "Preparing backup location..."
+mkdir -p "$BACKUP_DIR"
+print_success "Backup directory: $BACKUP_DIR"
+
+echo ""
+
 # Step 6: Copy configuration files
 print_step "Copying configuration files..."
 
-# Backup existing tmux.conf if it exists
+# Backup existing files before overwriting
+BACKUP_COUNT=0
+
+# Backup tmux.conf
 if [[ -f "$HOME/.tmux.conf" ]]; then
-    BACKUP_FILE="$HOME/.tmux.conf.backup.$(date +%Y%m%d_%H%M%S)"
-    print_warning "Backing up existing config to: $BACKUP_FILE"
-    cp "$HOME/.tmux.conf" "$BACKUP_FILE"
+    cp "$HOME/.tmux.conf" "$BACKUP_DIR/tmux.conf"
+    ((BACKUP_COUNT++))
+    print_warning "Backed up: .tmux.conf"
 fi
+
+# Backup layout scripts
+for script in ai-workspace.sh ai-compare.sh full-focus.sh; do
+    if [[ -f "$HOME/.tmux-layouts/$script" ]]; then
+        cp "$HOME/.tmux-layouts/$script" "$BACKUP_DIR/"
+        ((BACKUP_COUNT++))
+        print_warning "Backed up: .tmux-layouts/$script"
+    fi
+done
+
+# Backup bin tools
+for tool in tmux-launch vibe-help ta; do
+    if [[ -f "$HOME/.local/bin/$tool" ]]; then
+        mkdir -p "$BACKUP_DIR/bin"
+        cp "$HOME/.local/bin/$tool" "$BACKUP_DIR/bin/"
+        ((BACKUP_COUNT++))
+        print_warning "Backed up: .local/bin/$tool"
+    fi
+done
+
+if [[ $BACKUP_COUNT -gt 0 ]]; then
+    echo ""
+    print_success "Backed up $BACKUP_COUNT file(s) to $BACKUP_DIR"
+else
+    print_success "No existing files to backup (fresh installation)"
+fi
+
+echo ""
 
 # Copy tmux.conf
 cp "$SCRIPT_DIR/tmux.conf" "$HOME/.tmux.conf"
@@ -269,6 +365,14 @@ echo ""
 echo "  🚀 Quick start:"
 echo "     $SCRIPT_DIR/../QUICKSTART_TMUX.md"
 echo ""
+echo "  ⚙️  Environment variables:"
+echo "     $SCRIPT_DIR/../ENVIRONMENT.md"
+echo ""
+if [[ $BACKUP_COUNT -gt 0 ]]; then
+    echo "  💾 Backup location:"
+    echo "     $BACKUP_DIR"
+    echo ""
+fi
 echo -e "${YELLOW}═══════════════════════════════════════════════════════════${RESET}"
 echo ""
 echo "🎉 Enjoy your AI workspace!"
