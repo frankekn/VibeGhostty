@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════
-# AI Compare Layout for Tmux
+# AI Split Layout for Tmux
 # Created for Frank Yang - VibeGhostty Project
 # ═══════════════════════════════════════════════════════
 #
@@ -19,7 +19,7 @@
 # • 輔助窗格：測試執行、日誌監控、指令輸入
 #
 # Usage:
-#   ./ai-compare.sh [project_dir]
+#   ./ai-split.sh [project_dir]
 #
 # ═══════════════════════════════════════════════════════
 
@@ -29,7 +29,7 @@ set -e
 # Configuration
 # ───────────────────────────────────────────────────────
 
-SESSION_NAME="ai-compare"
+SESSION_NAME="ai-split"
 PROJECT_DIR="${1:-$PWD}"
 
 # AI 工具配置（支援環境變數自訂）
@@ -44,7 +44,7 @@ fi
 
 if [[ -d "$PROJECT_DIR/.git" ]]; then
     REPO_NAME=$(basename "$PROJECT_DIR")
-    SESSION_NAME="compare-${REPO_NAME}"
+    SESSION_NAME="split-${REPO_NAME}"
 fi
 
 # ───────────────────────────────────────────────────────

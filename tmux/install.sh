@@ -205,7 +205,7 @@ if [[ -f "$HOME/.tmux.conf" ]]; then
 fi
 
 # Backup layout scripts
-for script in ai-workspace.sh ai-compare.sh full-focus.sh; do
+for script in ai-workspace.sh ai-split.sh full-focus.sh; do
     if [[ -f "$HOME/.tmux-layouts/$script" ]]; then
         cp "$HOME/.tmux-layouts/$script" "$BACKUP_DIR/"
         ((BACKUP_COUNT++))
@@ -298,7 +298,7 @@ echo ""
 print_step "Linting shell scripts..."
 
 bash -n "$HOME/.tmux-layouts/ai-workspace.sh" && print_success "ai-workspace.sh passed syntax check"
-bash -n "$HOME/.tmux-layouts/ai-compare.sh" && print_success "ai-compare.sh passed syntax check"
+bash -n "$HOME/.tmux-layouts/ai-split.sh" && print_success "ai-split.sh passed syntax check"
 bash -n "$HOME/.tmux-layouts/full-focus.sh" && print_success "full-focus.sh passed syntax check"
 bash -n "$HOME/.local/bin/tmux-launch" && print_success "tmux-launch passed syntax check"
 
@@ -347,7 +347,7 @@ echo -e "     ${YELLOW}tmux-launch${RESET}              # menu-based layout pick
 echo ""
 echo "  5️⃣  Launch layouts directly"
 echo -e "     ${YELLOW}~/.tmux-layouts/ai-workspace.sh${RESET}"
-echo -e "     ${YELLOW}~/.tmux-layouts/ai-compare.sh${RESET}"
+echo -e "     ${YELLOW}~/.tmux-layouts/ai-split.sh${RESET}"
 echo -e "     ${YELLOW}~/.tmux-layouts/full-focus.sh${RESET}"
 echo ""
 echo "  6️⃣  Reload your tmux configuration"
