@@ -85,10 +85,10 @@ tmux new-session -d -s "$SESSION_NAME" -c "$PROJECT_DIR"
 # ───────────────────────────────────────────────────────
 
 # 設定標題
-tmux select-pane -t 0 -T "🔧 Codex CLI"
+tmux select-pane -t "${SESSION_NAME}:0.0" -T "🔧 Codex CLI"
 
 # 啟動 Codex
-tmux send-keys -t "$SESSION_NAME:0.0" "codex" C-m
+tmux send-keys -t "${SESSION_NAME}:0.0" "codex" C-m
 
 # ───────────────────────────────────────────────────────
 # Create Pane 1: Claude Code (右上 30%)
@@ -98,10 +98,10 @@ tmux send-keys -t "$SESSION_NAME:0.0" "codex" C-m
 tmux split-window -h -p 30 -t "$SESSION_NAME:0" -c "$PROJECT_DIR"
 
 # 設定標題
-tmux select-pane -t 1 -T "🤖 Claude Code"
+tmux select-pane -t "${SESSION_NAME}:0.1" -T "🤖 Claude Code"
 
 # 啟動 Claude Code
-tmux send-keys -t "$SESSION_NAME:0.1" "claude" C-m
+tmux send-keys -t "${SESSION_NAME}:0.1" "claude" C-m
 
 # ───────────────────────────────────────────────────────
 # Create Pane 2: Monitor (右下 30%)
@@ -111,7 +111,7 @@ tmux send-keys -t "$SESSION_NAME:0.1" "claude" C-m
 tmux split-window -v -p 50 -t "$SESSION_NAME:0.1" -c "$PROJECT_DIR"
 
 # 設定標題
-tmux select-pane -t 2 -T "📊 Monitor"
+tmux select-pane -t "${SESSION_NAME}:0.2" -T "📊 Monitor"
 
 # 顯示提示訊息（不自動執行程式）
 tmux send-keys -t "$SESSION_NAME:0.2" "clear" C-m
@@ -142,7 +142,7 @@ tmux send-keys -t "$SESSION_NAME:0.2" "echo ''" C-m
 # ───────────────────────────────────────────────────────
 
 # 回到 Codex CLI pane（主工作區）
-tmux select-pane -t 0
+tmux select-pane -t "${SESSION_NAME}:0.0"
 
 # 連接到 session
 echo "✅ Session 建立完成！正在連接..."

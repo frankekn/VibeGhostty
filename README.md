@@ -154,6 +154,13 @@ bash <(curl -fsSL https://raw.githubusercontent.com/frankekn/VibeGhostty/master/
 
 # Launch the interactive workspace picker
 tmux-launch
+
+# Start a workspace (auto-detect project)
+vibe-start
+
+# Or pick a mode explicitly
+vibe-start --mode dev
+vibe-start --mode review
 ```
 
 ### Default layouts
