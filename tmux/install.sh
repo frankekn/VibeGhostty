@@ -58,68 +58,68 @@ print_error() {
 print_header
 
 # Step 1: Check if tmux is installed
-print_step "檢查 Tmux 安裝狀態..."
+print_step "Checking tmux installation..."
 
 if ! command -v tmux &> /dev/null; then
-    print_warning "Tmux 未安裝"
+    print_warning "tmux is not installed"
 
     if command -v brew &> /dev/null; then
-        echo "使用 Homebrew 安裝 Tmux..."
+        echo "Installing tmux via Homebrew..."
         brew install tmux
-        print_success "Tmux 安裝完成"
+        print_success "tmux installation completed"
     else
-        print_error "找不到 Homebrew，請手動安裝 Tmux"
+        print_error "Homebrew not found. Please install tmux manually"
         echo "macOS: brew install tmux"
         echo "Ubuntu: sudo apt-get install tmux"
         exit 1
     fi
 else
     TMUX_VERSION=$(tmux -V)
-    print_success "Tmux 已安裝: $TMUX_VERSION"
+    print_success "tmux detected: $TMUX_VERSION"
 fi
 
 echo ""
 
 # Step 2: Check AI CLI tools
-print_step "檢查 AI CLI 工具..."
+print_step "Checking AI CLI tools..."
 
 if command -v codex &> /dev/null; then
-    print_success "Codex CLI 已安裝"
+    print_success "Codex CLI detected"
 else
-    print_warning "Codex CLI 未安裝（可選）"
+    print_warning "Codex CLI not found (optional)"
 fi
 
 if command -v claude &> /dev/null; then
-    print_success "Claude Code 已安裝"
+    print_success "Claude Code detected"
 else
-    print_warning "Claude Code 未安裝（可選）"
+    print_warning "Claude Code not found (optional)"
 fi
 
 echo ""
 
 # Step 3: Install TPM (Tmux Plugin Manager)
-print_step "檢查 TPM (Tmux Plugin Manager)..."
+print_step "Checking TPM (tmux plugin manager)..."
 
 TPM_DIR="$HOME/.tmux/plugins/tpm"
 
 if [[ -d "$TPM_DIR" ]]; then
-    print_success "TPM 已安裝"
+    print_success "TPM already installed"
 else
-    print_warning "TPM 未安裝，正在安裝..."
+    print_warning "TPM not found. Installing..."
     git clone https://github.com/tmux-plugins/tpm "$TPM_DIR"
-    print_success "TPM 安裝完成"
+    print_success "TPM installed"
 fi
 
 echo ""
 
 # Step 4: Create necessary directories
-print_step "創建必要目錄..."
+print_step "Creating directories..."
 
 mkdir -p "$HOME/.tmux-layouts"
 mkdir -p "$HOME/.local/bin"
 mkdir -p "$HOME/.tmux/logs"
 
-print_success "目錄創建完成"
+print_success "Directories ready"
 
 echo ""
 
@@ -127,92 +127,92 @@ echo ""
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Step 6: Copy configuration files
-print_step "複製配置文件..."
+print_step "Copying configuration files..."
 
 # Backup existing tmux.conf if it exists
 if [[ -f "$HOME/.tmux.conf" ]]; then
     BACKUP_FILE="$HOME/.tmux.conf.backup.$(date +%Y%m%d_%H%M%S)"
-    print_warning "備份現有配置到: $BACKUP_FILE"
+    print_warning "Backing up existing config to: $BACKUP_FILE"
     cp "$HOME/.tmux.conf" "$BACKUP_FILE"
 fi
 
 # Copy tmux.conf
 cp "$SCRIPT_DIR/tmux.conf" "$HOME/.tmux.conf"
-print_success "複製 tmux.conf"
+print_success "Copied tmux.conf"
 
 # Copy layout scripts
 cp "$SCRIPT_DIR/layouts/"*.sh "$HOME/.tmux-layouts/"
-print_success "複製布局腳本"
+print_success "Copied layout scripts"
 
 # Copy launcher
 cp "$SCRIPT_DIR/bin/tmux-launch" "$HOME/.local/bin/tmux-launch"
-print_success "複製啟動器"
+print_success "Copied tmux-launch"
 
 # Copy vibe-help
 cp "$SCRIPT_DIR/bin/vibe-help" "$HOME/.local/bin/vibe-help"
-print_success "複製快捷鍵速查工具"
+print_success "Copied vibe-help"
 
 # Copy ta (Tmux Attach wrapper)
 cp "$SCRIPT_DIR/bin/ta" "$HOME/.local/bin/ta"
-print_success "複製智能 session 管理工具"
+print_success "Copied ta helper"
 
 echo ""
 
 # Step 7: Set executable permissions
-print_step "設定執行權限..."
+print_step "Setting executable permissions..."
 
 chmod +x "$HOME/.tmux-layouts/"*.sh
 chmod +x "$HOME/.local/bin/tmux-launch"
 chmod +x "$HOME/.local/bin/vibe-help"
 chmod +x "$HOME/.local/bin/ta"
 
-print_success "權限設定完成"
+print_success "Permissions updated"
 
 echo ""
 
 # Step 8: Check if ~/.local/bin is in PATH
-print_step "檢查 PATH 設定..."
+print_step "Checking PATH configuration..."
 
 if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-    print_warning "~/.local/bin 不在 PATH 中"
+    print_warning "~/.local/bin is not in PATH"
     echo ""
-    echo "請將以下內容加入你的 shell 配置文件："
+    echo "Add the following line to your shell profile:"
     echo ""
     echo -e "${CYAN}export PATH=\"\$HOME/.local/bin:\$PATH\"${RESET}"
     echo ""
-    echo "對於 zsh: ~/.zshrc"
-    echo "對於 bash: ~/.bashrc 或 ~/.bash_profile"
+    echo "For zsh: ~/.zshrc"
+    echo "For bash: ~/.bashrc or ~/.bash_profile"
     echo ""
-    read -p "是否現在自動加入 ~/.zshrc? [Y/n]: " add_to_path
+    read -p "Automatically append to ~/.zshrc now? [Y/n]: " add_to_path
 
     if [[ "$add_to_path" != "n" && "$add_to_path" != "N" ]]; then
         echo "" >> "$HOME/.zshrc"
         echo "# Added by VibeGhostty Tmux installer" >> "$HOME/.zshrc"
         echo "export PATH=\"\$HOME/.local/bin:\$PATH\"" >> "$HOME/.zshrc"
-        print_success "已加入 ~/.zshrc"
-        echo "請執行: source ~/.zshrc"
+        print_success "Added to ~/.zshrc"
+        echo "Run: source ~/.zshrc"
     fi
 else
-    print_success "PATH 已正確設定"
+    print_success "PATH already includes ~/.local/bin"
 fi
 
 echo ""
 
 # Step 9: Test syntax
-print_step "測試腳本語法..."
+print_step "Linting shell scripts..."
 
-bash -n "$HOME/.tmux-layouts/ai-workspace.sh" && print_success "ai-workspace.sh 語法正確"
-bash -n "$HOME/.tmux-layouts/ai-compare.sh" && print_success "ai-compare.sh 語法正確"
-bash -n "$HOME/.tmux-layouts/full-focus.sh" && print_success "full-focus.sh 語法正確"
-bash -n "$HOME/.local/bin/tmux-launch" && print_success "tmux-launch 語法正確"
+bash -n "$HOME/.tmux-layouts/ai-workspace.sh" && print_success "ai-workspace.sh passed syntax check"
+bash -n "$HOME/.tmux-layouts/ai-compare.sh" && print_success "ai-compare.sh passed syntax check"
+bash -n "$HOME/.tmux-layouts/full-focus.sh" && print_success "full-focus.sh passed syntax check"
+bash -n "$HOME/.local/bin/tmux-launch" && print_success "tmux-launch passed syntax check"
 
 echo ""
 
 # Step 10: Install TPM plugins
-print_step "安裝 Tmux 插件..."
+print_step "Install tmux plugins"
 
-echo "請在 Tmux 中按 Ctrl+Space 然後按 I（大寫）來安裝插件"
-print_warning "如果 Tmux 正在執行，請執行: tmux source-file ~/.tmux.conf"
+echo "Inside tmux press Ctrl+Space then capital I to install plugins"
+print_warning "If tmux is already running, reload with: tmux source-file ~/.tmux.conf"
 
 echo ""
 
@@ -223,47 +223,47 @@ echo ""
 echo -e "${GREEN}${BOLD}"
 echo "╔═══════════════════════════════════════════════════════════╗"
 echo "║                                                           ║"
-echo "║              ✅ 安裝完成！                                ║"
+echo "║              ✅ Installation complete!                    ║"
 echo "║                                                           ║"
 echo "╚═══════════════════════════════════════════════════════════╝"
 echo -e "${RESET}"
 
 echo ""
-echo -e "${CYAN}${BOLD}快速開始：${RESET}"
+echo -e "${CYAN}${BOLD}Quick start:${RESET}"
 echo ""
-echo "  1️⃣  快速 attach 到專案 session（最常用！）："
-echo -e "     ${YELLOW}ta${RESET}                    # 自動偵測當前專案"
-echo -e "     ${YELLOW}ta -l${RESET}                 # 列出所有 session"
-echo -e "     ${YELLOW}ta -n session名稱${RESET}     # 指定 session"
+echo "  1️⃣  Smart attach (ta)"
+echo -e "     ${YELLOW}ta${RESET}                    # auto-detect current project"
+echo -e "     ${YELLOW}ta -l${RESET}                 # list all sessions"
+echo -e "     ${YELLOW}ta -n session-name${RESET}    # attach by name"
 echo ""
-echo "  2️⃣  查看所有快捷鍵（不用背！）："
+echo "  2️⃣  Keyboard reference"
 echo -e "     ${YELLOW}vibe-help${RESET}"
-echo -e "     或在 Tmux 中按 ${YELLOW}Ctrl+Space ?${RESET}"
+echo -e "     or inside tmux press ${YELLOW}Ctrl+Space ?${RESET}"
 echo ""
-echo "  3️⃣  啟動互動式選單："
+echo "  3️⃣  Launch the interactive selector"
 echo -e "     ${YELLOW}tmux-launch${RESET}"
 echo ""
-echo "  4️⃣  直接啟動特定布局："
+echo "  4️⃣  Launch layouts directly"
 echo -e "     ${YELLOW}~/.tmux-layouts/ai-workspace.sh${RESET}"
 echo -e "     ${YELLOW}~/.tmux-layouts/ai-compare.sh${RESET}"
 echo -e "     ${YELLOW}~/.tmux-layouts/full-focus.sh${RESET}"
 echo ""
-echo "  5️⃣  重新載入 Tmux 配置："
+echo "  5️⃣  Reload your tmux configuration"
 echo -e "     ${YELLOW}tmux source-file ~/.tmux.conf${RESET}"
-echo -e "     或在 Tmux 中按 ${YELLOW}Ctrl+Space r${RESET}"
+echo -e "     or inside tmux press ${YELLOW}Ctrl+Space r${RESET}"
 echo ""
-echo "  6️⃣  安裝 Tmux 插件："
-echo -e "     在 Tmux 中按 ${YELLOW}Ctrl+Space I${RESET} (大寫 I)"
+echo "  6️⃣  Install tmux plugins"
+echo -e "     Inside tmux press ${YELLOW}Ctrl+Space I${RESET} (capital I)"
 echo ""
-echo -e "${CYAN}${BOLD}更多資訊：${RESET}"
+echo -e "${CYAN}${BOLD}More resources:${RESET}"
 echo ""
-echo "  📖 完整使用指南："
+echo "  📖 Full guide:"
 echo "     $SCRIPT_DIR/../TMUX_GUIDE.md"
 echo ""
-echo "  🚀 快速開始："
+echo "  🚀 Quick start:"
 echo "     $SCRIPT_DIR/../QUICKSTART_TMUX.md"
 echo ""
 echo -e "${YELLOW}═══════════════════════════════════════════════════════════${RESET}"
 echo ""
-echo "🎉 享受你的 AI 工作空間！"
+echo "🎉 Enjoy your AI workspace!"
 echo ""
