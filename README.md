@@ -13,6 +13,7 @@ VibeGhostty delivers a ready-to-use Ghostty and Tmux setup crafted for pairing t
 - ⌨️ **Productive keybindings** for tabs, splits, and window management
 - 🤖 **AI-friendly layouts** that keep assistants and monitors in view
 - 📊 **Large scrollback buffers** so conversations stay at your fingertips
+- 🚀 **Intelligent project startup** (vibe-start) - zero-config workspace creation *(Coming in v1.0)*
 
 ---
 
@@ -155,13 +156,34 @@ bash <(curl -fsSL https://raw.githubusercontent.com/frankekn/VibeGhostty/master/
 # Launch the interactive workspace picker
 tmux-launch
 
-# Start a workspace (auto-detect project)
-vibe-start
+# Start a workspace (auto-detect project) - COMING SOON in v1.0
+# vibe-start
 
-# Or pick a mode explicitly
-vibe-start --mode dev
-vibe-start --mode review
+# Zero-configuration startup - auto-detects Next.js, Node.js, Python projects
+# Automatically generates AI workspace (70/30 split) based on project type
+# See DESIGN.md for detailed MVP roadmap
 ```
+
+### vibe-start: Intelligent Project Startup *(In Development)*
+
+`vibe-start` is an upcoming feature that eliminates manual setup by automatically detecting your project type and launching the appropriate AI workspace.
+
+**Key Features** (v1.0 MVP):
+- 🔍 **Smart Detection**: Automatically identifies Next.js, Node.js, and Python projects
+- ⚡ **Zero Configuration**: Uses environment variables—no config files needed
+- 🎯 **Single Command**: `vibe-start` and you're ready to code
+- 🚦 **Port Checking**: Automatically handles port conflicts (3000, 5432)
+- 👁️ **Interactive Preview**: Shows what will be launched before execution
+
+**Current Status**: Design complete, implementation scheduled for Week 1-2
+- 📖 Full design: [DESIGN.md](DESIGN.md)
+- 📊 MVP analysis: [docs/MVP_ANALYSIS.md](docs/MVP_ANALYSIS.md)
+- 🔍 Complexity analysis: [docs/COMPLEXITY_ANALYSIS.md](docs/COMPLEXITY_ANALYSIS.md)
+
+**Roadmap**:
+- **v1.0 MVP** (2 weeks): Zero-config startup, project detection, single layout
+- **v1.1** (1 week later): Memory system, `.vibeproject` config, multi-mode support
+- **v2.0** (future): Custom templates, hooks, advanced features
 
 ### Default layouts
 
@@ -234,11 +256,16 @@ Use Ghostty for structure and Tmux for orchestration—the combination delivers 
 VibeGhostty/
 ├── README.md              # This quickstart document (English)
 ├── config                 # Primary Ghostty configuration
+├── DESIGN.md              # vibe-start feature design (v1.0 MVP)
 ├── GUIDE.md               # In-depth Ghostty guide (Traditional Chinese)
 ├── INSTALL.md             # Installation walk-through (Traditional Chinese)
 ├── QUICKSTART.md          # Five-minute Ghostty setup (Traditional Chinese)
 ├── TMUX_GUIDE.md          # Complete tmux manual (Traditional Chinese)
 ├── QUICKSTART_TMUX.md     # tmux quickstart (Traditional Chinese)
+├── VIBE_CONFIG_DESIGN.md  # Two-tier config system design (v1.1+)
+├── docs/
+│   ├── MVP_ANALYSIS.md         # Feature prioritization and MVP scope
+│   └── COMPLEXITY_ANALYSIS.md  # Design simplification analysis
 └── tmux/
     ├── tmux.conf          # Main tmux configuration
     ├── install.sh         # Automated installer
@@ -290,8 +317,8 @@ Issues and pull requests are welcome—feel free to share improvements or new la
 
 ---
 
-**Configuration version**: 1.0.0  
-**Last updated**: 2025-10-16  
+**Configuration version**: 1.0.0
+**Last updated**: 2025-10-19
 **Tested Ghostty version**: 1.0+
 
 Enjoy a smoother AI-assisted terminal workflow! 🎉

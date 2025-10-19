@@ -2,7 +2,7 @@
 
 # ═══════════════════════════════════════════════════════
 # VibeGhostty 快捷鍵速查工具
-# 快速查看所有快捷鍵，不用記憶
+# 快速查看所有快捷鍵、環境變數和使用範例
 # ═══════════════════════════════════════════════════════
 
 # 顏色定義
@@ -12,94 +12,298 @@ PURPLE="\033[38;5;141m"
 ORANGE="\033[38;5;215m"
 GREEN="\033[38;5;158m"
 YELLOW="\033[38;5;222m"
+CYAN="\033[38;5;117m"
+RED="\033[38;5;203m"
 RESET="\033[0m"
 
-# 清除螢幕
-clear
+# 顯示使用說明
+show_usage() {
+    cat << EOF
+用法: vibe-help [選項]
 
-# 顯示 ASCII 標題
-cat << 'EOF'
+選項:
+  -h, --help          顯示此幫助訊息
+  -s, --shortcuts     僅顯示快捷鍵
+  -e, --env           僅顯示環境變數
+  -a, --all           顯示所有內容（預設）
+  -v, --version       顯示版本資訊
+
+範例:
+  vibe-help              # 顯示所有內容
+  vibe-help -s           # 僅顯示快捷鍵
+  vibe-help -e           # 僅顯示環境變數
+EOF
+}
+
+# 顯示版本
+show_version() {
+    echo "VibeGhostty vibe-help v1.1.0"
+}
+
+# 顯示標題
+show_header() {
+    clear
+    cat << 'EOF'
 ╔════════════════════════════════════════════════════════════╗
 ║         VibeGhostty 快捷鍵速查表 (Cheatsheet)             ║
 ╚════════════════════════════════════════════════════════════╝
 EOF
+    echo ""
+}
 
-echo ""
-echo -e "${BOLD}${BLUE}━━━ 最常用快捷鍵（只需記這 5 個！）━━━${RESET}"
-echo ""
-echo -e "  ${ORANGE}Cmd + T${RESET}          開新 Tab（新任務）"
-echo -e "  ${ORANGE}Cmd + 1/2/3${RESET}      快速切換 Tab（最常用！）"
-echo -e "  ${ORANGE}Cmd + D${RESET}          並排分割視窗（比較 AI 輸出）"
-echo -e "  ${ORANGE}Ctrl + Space + ?${RESET} 顯示完整幫助"
-echo -e "  ${ORANGE}tmux-launch${RESET}      啟動預設布局"
+# 顯示最常用快捷鍵
+show_essential() {
+    echo -e "${BOLD}${BLUE}━━━ ⭐ 最常用快捷鍵（只需記這 5 個！）━━━${RESET}"
+    echo ""
+    echo -e "  ${ORANGE}Cmd + T${RESET}          開新 Tab（新任務）"
+    echo -e "  ${ORANGE}Cmd + 1/2/3${RESET}      快速切換 Tab（最常用！）"
+    echo -e "  ${ORANGE}Cmd + D${RESET}          並排分割視窗（比較 AI 輸出）"
+    echo -e "  ${ORANGE}Ctrl + Space + ?${RESET} 顯示完整幫助"
+    echo -e "  ${ORANGE}tmux-launch${RESET}      啟動預設布局"
+    echo ""
+}
 
-echo ""
-echo -e "${BOLD}${PURPLE}━━━ Ghostty 快捷鍵（直接使用，無需 Prefix）━━━${RESET}"
-echo ""
-echo -e "  ${GREEN}Tab 管理${RESET}"
-echo "    Cmd + T                 新建 Tab"
-echo "    Cmd + W                 關閉 Tab"
-echo "    Cmd + 1/2/3...9         跳轉到指定 Tab"
-echo "    Cmd + Shift + ]         下一個 Tab"
-echo "    Cmd + Shift + [         上一個 Tab"
-echo ""
-echo -e "  ${GREEN}視窗分割${RESET}"
-echo "    Cmd + D                 向右分割"
-echo "    Cmd + Shift + D         向下分割"
-echo ""
-echo -e "  ${GREEN}系統功能${RESET}"
-echo "    Cmd + Shift + ,         重新載入配置"
+# 顯示 Ghostty 快捷鍵
+show_ghostty_keys() {
+    echo -e "${BOLD}${PURPLE}━━━ 🖥️  Ghostty 快捷鍵（直接使用，無需 Prefix）━━━${RESET}"
+    echo ""
+    echo -e "  ${GREEN}📑 Tab 管理${RESET}"
+    printf "  %-25s %s\n" "Cmd + T" "新建 Tab"
+    printf "  %-25s %s\n" "Cmd + W" "關閉 Tab"
+    printf "  %-25s %s\n" "Cmd + 1/2/3...9" "跳轉到指定 Tab"
+    printf "  %-25s %s\n" "Cmd + Shift + ]" "下一個 Tab"
+    printf "  %-25s %s\n" "Cmd + Shift + [" "上一個 Tab"
+    echo ""
+    echo -e "  ${GREEN}✂️  視窗分割${RESET}"
+    printf "  %-25s %s\n" "Cmd + D" "向右分割"
+    printf "  %-25s %s\n" "Cmd + Shift + D" "向下分割"
+    echo ""
+    echo -e "  ${GREEN}⚙️  系統功能${RESET}"
+    printf "  %-25s %s\n" "Cmd + Shift + ," "重新載入配置"
+    echo ""
+}
 
-echo ""
-echo -e "${BOLD}${PURPLE}━━━ Tmux 快捷鍵（需要先按 Ctrl+Space）━━━${RESET}"
-echo ""
-echo -e "  ${YELLOW}基本操作${RESET}"
-echo "    Ctrl + Space            Prefix（啟動 Tmux）"
-echo "    ?                       顯示完整幫助"
-echo "    m                       快速切換模式（臨時控制 pane）"
-echo "    r                       重新載入配置"
-echo ""
-echo -e "  ${YELLOW}Pane 管理${RESET}"
-echo "    |                       向右分割"
-echo "    -                       向下分割"
-echo "    h/j/k/l                 Vim 導航（左/下/上/右）"
-echo "    1/2/3/4/5               跳轉到 pane 1~5"
-echo "    z                       全屏/還原 pane"
-echo ""
-echo -e "  ${YELLOW}Pane 大小調整${RESET}"
-echo "    H/J/K/L                 調整 pane 大小"
+# 顯示 Tmux 快捷鍵
+show_tmux_keys() {
+    echo -e "${BOLD}${PURPLE}━━━ 🔧 Tmux 快捷鍵（需要先按 Ctrl+Space）━━━${RESET}"
+    echo ""
+    echo -e "  ${YELLOW}🎯 基本操作${RESET}"
+    printf "  %-25s %s\n" "Ctrl + Space" "Prefix（啟動 Tmux）"
+    printf "  %-25s %s\n" "?" "顯示完整幫助"
+    printf "  %-25s %s\n" "m" "快速模式選單（vibe-start）"
+    printf "  %-25s %s\n" "r" "重新載入配置"
+    printf "  %-25s %s\n" ":" "命令提示符"
+    echo ""
+    echo -e "  ${YELLOW}📐 Pane 管理${RESET}"
+    printf "  %-25s %s\n" "|" "向右分割"
+    printf "  %-25s %s\n" "-" "向下分割"
+    printf "  %-25s %s\n" "h/j/k/l" "Vim 導航（左/下/上/右）"
+    printf "  %-25s %s\n" "1/2/3/4/5" "跳轉到 pane 1~5"
+    printf "  %-25s %s\n" "z" "全屏/還原 pane"
+    printf "  %-25s %s\n" "x" "關閉當前 pane"
+    printf "  %-25s %s\n" "!" "將 pane 轉為 window"
+    echo ""
+    echo -e "  ${YELLOW}📏 Pane 大小調整${RESET}"
+    printf "  %-25s %s\n" "H/J/K/L" "調整 pane 大小（Vim 風格）"
+    printf "  %-25s %s\n" "Space" "切換預設布局"
+    echo ""
+    echo -e "  ${YELLOW}🪟 Window 管理${RESET}"
+    printf "  %-25s %s\n" "c" "新建 window"
+    printf "  %-25s %s\n" "," "重命名 window"
+    printf "  %-25s %s\n" "&" "關閉 window"
+    printf "  %-25s %s\n" "n/p" "下一個/上一個 window"
+    printf "  %-25s %s\n" "0-9" "跳轉到指定 window"
+    echo ""
+    echo -e "  ${YELLOW}📋 Session 管理${RESET}"
+    printf "  %-25s %s\n" "d" "暫離 session（detach）"
+    printf "  %-25s %s\n" "s" "列出所有 sessions"
+    printf "  %-25s %s\n" "$" "重命名 session"
+    echo ""
+    echo -e "  ${YELLOW}📝 Copy Mode（Vim 風格）${RESET}"
+    printf "  %-25s %s\n" "[" "進入 copy mode"
+    printf "  %-25s %s\n" "v" "開始選取（在 copy mode 中）"
+    printf "  %-25s %s\n" "y" "複製選取內容"
+    printf "  %-25s %s\n" "Ctrl+v" "矩形選取"
+    printf "  %-25s %s\n" "]" "貼上複製內容"
+    echo ""
+}
 
-echo ""
-echo -e "${BOLD}${GREEN}━━━ 常用工作流程 ━━━${RESET}"
-echo ""
-echo "  1️⃣  Claude Code + Codex 並行"
-echo "      → Cmd+T 開新 tab → Cmd+1/2 切換"
-echo ""
-echo "  2️⃣  AI 輸出比較"
-echo "      → Cmd+D 分割視窗 → 左右並排"
-echo ""
-echo "  3️⃣  多專案管理"
-echo "      → Cmd+T 多個 tab → Cmd+數字鍵跳轉"
-echo ""
-echo "  4️⃣  預設布局啟動"
-echo "      → 終端執行 tmux-launch → 選擇布局"
+# 顯示環境變數
+show_environment() {
+    echo -e "${BOLD}${CYAN}━━━ 🌍 環境變數設定 ━━━${RESET}"
+    echo ""
+    echo -e "  ${GREEN}AI Workspace 布局（ai-workspace.sh）${RESET}"
+    echo "  ┌────────────────────┬────────────┬──────────────────────┐"
+    echo "  │ 變數名稱           │ 預設值     │ 說明                 │"
+    echo "  ├────────────────────┼────────────┼──────────────────────┤"
+    echo "  │ VIBE_AI_PRIMARY    │ codex      │ 主要 AI 工具（70%）  │"
+    echo "  │ VIBE_AI_SECONDARY  │ claude     │ 輔助 AI 工具（30%）  │"
+    echo "  └────────────────────┴────────────┴──────────────────────┘"
+    echo ""
+    echo -e "  ${GREEN}AI Compare 布局（ai-compare.sh）${RESET}"
+    echo "  ┌────────────────────┬────────────┬──────────────────────┐"
+    echo "  │ 變數名稱           │ 預設值     │ 說明                 │"
+    echo "  ├────────────────────┼────────────┼──────────────────────┤"
+    echo "  │ VIBE_AI_LEFT       │ codex      │ 左側 AI 工具（50%）  │"
+    echo "  │ VIBE_AI_RIGHT      │ claude     │ 右側 AI 工具（50%）  │"
+    echo "  └────────────────────┴────────────┴──────────────────────┘"
+    echo ""
+    echo -e "  ${GREEN}Full Focus 布局（full-focus.sh）${RESET}"
+    echo "  ┌────────────────────┬────────────┬──────────────────────┐"
+    echo "  │ 變數名稱           │ 預設值     │ 說明                 │"
+    echo "  ├────────────────────┼────────────┼──────────────────────┤"
+    echo "  │ VIBE_AI_FOCUS      │ codex      │ 專注模式 AI 工具     │"
+    echo "  └────────────────────┴────────────┴──────────────────────┘"
+    echo ""
+    echo -e "  ${ORANGE}設定範例${RESET}"
+    echo ""
+    echo "  # 臨時設定（單次使用）"
+    echo "  export VIBE_AI_PRIMARY=claude"
+    echo "  ./ai-workspace.sh"
+    echo ""
+    echo "  # 永久設定（加入 ~/.zshrc 或 ~/.bashrc）"
+    echo "  export VIBE_AI_PRIMARY=claude"
+    echo "  export VIBE_AI_SECONDARY=codex"
+    echo "  export VIBE_AI_FOCUS=claude"
+    echo ""
+    echo -e "  ${ORANGE}支援的 AI 工具${RESET}"
+    echo "  • codex  - Codex CLI (npm install -g @codexhq/cli)"
+    echo "  • claude - Claude Code (https://claude.com/code)"
+    echo ""
+}
 
-echo ""
-echo -e "${BOLD}${ORANGE}━━━ Tmux 布局腳本 ━━━${RESET}"
-echo ""
-echo "  tmux-launch              互動式選單（推薦）"
-echo "  ai-workspace.sh          AI 工作空間（70/30 布局）"
-echo "  ai-compare.sh            AI 比較模式（50/50 並排）"
-echo "  full-focus.sh            全屏專注模式"
+# 顯示工作流程
+show_workflows() {
+    echo -e "${BOLD}${GREEN}━━━ 🚀 常用工作流程 ━━━${RESET}"
+    echo ""
+    echo "  1️⃣  Claude Code + Codex 並行"
+    echo "      → Cmd+T 開新 tab → Cmd+1/2 切換"
+    echo ""
+    echo "  2️⃣  AI 輸出比較"
+    echo "      → Cmd+D 分割視窗 → 左右並排"
+    echo ""
+    echo "  3️⃣  多專案管理"
+    echo "      → Cmd+T 多個 tab → Cmd+數字鍵跳轉"
+    echo ""
+    echo "  4️⃣  預設布局啟動"
+    echo "      → 終端執行 tmux-launch → 選擇布局"
+    echo ""
+    echo "  5️⃣  使用 vibe-start 模式選單"
+    echo "      → Ctrl+Space m → 選擇開發模式"
+    echo ""
+}
 
-echo ""
-echo -e "${BOLD}💡 小技巧${RESET}"
-echo ""
-echo "  • 在 Tmux 內按 ${ORANGE}Ctrl+Space ?${RESET} 可隨時查看快捷鍵"
-echo "  • Status bar 底部也顯示了常用快捷鍵提示"
-echo "  • Ctrl+Space m 會臨時開啟控制 pane，完成後自動關閉"
-echo "  • 執行 ${ORANGE}vibe-help${RESET} 隨時查看這個幫助"
-echo "  • 大部分情況下只需要用 Ghostty 的 ${ORANGE}Cmd+數字${RESET} 就夠了"
-echo ""
-echo "════════════════════════════════════════════════════════════"
-echo ""
+# 顯示布局腳本
+show_layouts() {
+    echo -e "${BOLD}${ORANGE}━━━ 📦 Tmux 布局腳本 ━━━${RESET}"
+    echo ""
+    printf "  %-25s %s\n" "tmux-launch" "互動式選單（推薦）"
+    printf "  %-25s %s\n" "ai-workspace.sh" "AI 工作空間（70/30 布局）"
+    printf "  %-25s %s\n" "ai-compare.sh" "AI 比較模式（50/50 並排）"
+    printf "  %-25s %s\n" "full-focus.sh" "全屏專注模式"
+    echo ""
+}
+
+# 顯示小技巧
+show_tips() {
+    echo -e "${BOLD}💡 小技巧${RESET}"
+    echo ""
+    echo "  • 在 Tmux 內按 ${ORANGE}Ctrl+Space ?${RESET} 可隨時查看快捷鍵"
+    echo "  • Status bar 底部顯示了常用快捷鍵提示"
+    echo "  • Ctrl+Space m 可快速切換 vibe-start 模式"
+    echo "  • 執行 ${ORANGE}vibe-help${RESET} 隨時查看這個幫助"
+    echo "  • 執行 ${ORANGE}vibe-help -e${RESET} 查看環境變數設定"
+    echo "  • 執行 ${ORANGE}ta${RESET} 智能 attach 到專案 session"
+    echo "  • 大部分情況下只需要用 Ghostty 的 ${ORANGE}Cmd+數字${RESET} 就夠了"
+    echo ""
+}
+
+# 顯示快速開始
+show_quickstart() {
+    echo -e "${BOLD}${CYAN}━━━ ⚡ 快速開始 ━━━${RESET}"
+    echo ""
+    echo "  新手？試試這個 3 步驟："
+    echo ""
+    echo "  1. 執行 ${ORANGE}tmux-launch${RESET} 選擇布局"
+    echo "  2. 使用 ${ORANGE}Cmd+1/2/3${RESET} 在 Ghostty tabs 間切換"
+    echo "  3. 在 Tmux 中按 ${ORANGE}Ctrl+Space m${RESET} 選擇開發模式"
+    echo ""
+    echo "  完整文檔："
+    echo "  • QUICKSTART_TMUX.md  - 5 分鐘快速開始"
+    echo "  • TMUX_GUIDE.md       - 完整使用指南"
+    echo "  • ENVIRONMENT.md      - 環境變數詳解"
+    echo ""
+}
+
+# 主函數
+main() {
+    local show_shortcuts=false
+    local show_env=false
+    local show_all=true
+
+    # 解析參數
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                show_usage
+                exit 0
+                ;;
+            -v|--version)
+                show_version
+                exit 0
+                ;;
+            -s|--shortcuts)
+                show_shortcuts=true
+                show_all=false
+                shift
+                ;;
+            -e|--env)
+                show_env=true
+                show_all=false
+                shift
+                ;;
+            -a|--all)
+                show_all=true
+                shift
+                ;;
+            *)
+                echo -e "${RED}錯誤：未知選項 $1${RESET}"
+                echo ""
+                show_usage
+                exit 1
+                ;;
+        esac
+    done
+
+    # 顯示內容
+    if [[ "$show_all" == true ]]; then
+        show_header
+        show_essential
+        show_ghostty_keys
+        show_tmux_keys
+        show_environment
+        show_workflows
+        show_layouts
+        show_quickstart
+        show_tips
+        echo "════════════════════════════════════════════════════════════"
+        echo ""
+    elif [[ "$show_shortcuts" == true ]]; then
+        show_header
+        show_essential
+        show_ghostty_keys
+        show_tmux_keys
+        show_workflows
+        show_layouts
+        echo "════════════════════════════════════════════════════════════"
+        echo ""
+    elif [[ "$show_env" == true ]]; then
+        show_header
+        show_environment
+        echo "════════════════════════════════════════════════════════════"
+        echo ""
+    fi
+}
+
+# 執行主函數
+main "$@"

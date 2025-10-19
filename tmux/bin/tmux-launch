@@ -17,6 +17,7 @@ YELLOW="\033[33m"
 MAGENTA="\033[35m"
 RED="\033[31m"
 BOLD="\033[1m"
+DIM="\033[2m"
 RESET="\033[0m"
 
 # ───────────────────────────────────────────────────────
@@ -24,7 +25,7 @@ RESET="\033[0m"
 # ───────────────────────────────────────────────────────
 
 LAYOUTS_DIR="$HOME/.tmux-layouts"
-PROJECT_DIR="${1:-$PWD}"
+PROJECT_DIR="$PWD"
 
 # 如果有安裝 fzf，可以用來選擇專案
 HAS_FZF=false
@@ -32,9 +33,126 @@ if command -v fzf &> /dev/null; then
     HAS_FZF=true
 fi
 
+# 布局資訊資料庫
+declare -A LAYOUT_INFO=(
+    ["ai-workspace:name"]="AI Workspace"
+    ["ai-workspace:desc"]="主要開發布局，70/30 分割"
+    ["ai-workspace:tools"]="Codex CLI (70%) + Claude Code (30%)"
+    ["ai-workspace:preview"]="┌─────────────────┬──────┐\n│   Primary       │ Aux  │\n│   70%           │ 30%  │\n│                 ├──────┤\n│                 │ Mon. │\n└─────────────────┴──────┘"
+
+    ["ai-compare:name"]="AI Compare"
+    ["ai-compare:desc"]="並排比較兩個 AI 輸出"
+    ["ai-compare:tools"]="Codex (50%) + Claude (50%)"
+    ["ai-compare:preview"]="┌─────────┬─────────┐\n│ Codex   │ Claude  │\n│ 50%     │ 50%     │\n├─────────┴─────────┤\n│ Compare/Monitor   │\n└───────────────────┘"
+
+    ["full-focus:name"]="Full Focus"
+    ["full-focus:desc"]="全屏專注模式，最小干擾"
+    ["full-focus:tools"]="Single AI (100%)"
+    ["full-focus:preview"]="┌───────────────────┐\n│                   │\n│   Single AI       │\n│   100%            │\n│                   │\n└───────────────────┘"
+)
+
+# 環境變數資訊
+declare -A ENV_VARS=(
+    ["VIBE_AI_PRIMARY"]="ai-workspace 主要工具 (預設: codex)"
+    ["VIBE_AI_SECONDARY"]="ai-workspace 輔助工具 (預設: claude)"
+    ["VIBE_AI_LEFT"]="ai-compare 左側工具 (預設: codex)"
+    ["VIBE_AI_RIGHT"]="ai-compare 右側工具 (預設: claude)"
+    ["VIBE_AI_FOCUS"]="full-focus 使用的工具 (預設: codex)"
+)
+
 # ───────────────────────────────────────────────────────
 # Helper Functions
 # ───────────────────────────────────────────────────────
+
+show_help() {
+    cat << EOF
+${BOLD}Tmux AI Workspace Launcher${RESET}
+
+${CYAN}用法:${RESET}
+  tmux-launch [選項] [布局名稱]
+
+${CYAN}選項:${RESET}
+  -h, --help              顯示此幫助訊息
+  -l, --list              列出所有可用布局
+  -p, --project <路徑>    指定專案目錄（預設：當前目錄）
+
+${CYAN}可用布局:${RESET}
+  ai-workspace           主要開發布局 (70/30 分割)
+  ai-compare             並排比較布局 (50/50 分割)
+  full-focus             全屏專注模式 (100% 單一工具)
+
+${CYAN}環境變數:${RESET}
+  VIBE_AI_PRIMARY       ai-workspace 主要工具 (預設: codex)
+  VIBE_AI_SECONDARY     ai-workspace 輔助工具 (預設: claude)
+  VIBE_AI_LEFT          ai-compare 左側工具 (預設: codex)
+  VIBE_AI_RIGHT         ai-compare 右側工具 (預設: claude)
+  VIBE_AI_FOCUS         full-focus 使用的工具 (預設: codex)
+
+${CYAN}範例:${RESET}
+  tmux-launch                        # 互動式選單
+  tmux-launch ai-workspace           # 直接啟動 AI Workspace
+  tmux-launch -p ~/my-project        # 指定專案目錄
+  tmux-launch -l                     # 列出所有布局
+
+${CYAN}自訂 AI 工具:${RESET}
+  export VIBE_AI_PRIMARY=claude      # 將 Claude 設為主要工具
+  tmux-launch ai-workspace           # 使用 Claude 作為主工具
+
+${DIM}更多資訊請參考: https://github.com/frankekn/VibeGhostty${RESET}
+EOF
+}
+
+list_layouts() {
+    echo -e "${BOLD}${CYAN}可用布局:${RESET}\n"
+
+    for layout in "ai-workspace" "ai-compare" "full-focus"; do
+        local name="${LAYOUT_INFO[${layout}:name]}"
+        local desc="${LAYOUT_INFO[${layout}:desc]}"
+        local tools="${LAYOUT_INFO[${layout}:tools]}"
+        local preview="${LAYOUT_INFO[${layout}:preview]}"
+
+        echo -e "${GREEN}${BOLD}${layout}${RESET}"
+        echo -e "  ${BOLD}名稱:${RESET} ${name}"
+        echo -e "  ${BOLD}說明:${RESET} ${desc}"
+        echo -e "  ${BOLD}工具:${RESET} ${tools}"
+        echo -e "  ${DIM}預覽:${RESET}"
+        echo -e "${DIM}$(echo -e "$preview" | sed 's/^/    /')${RESET}"
+        echo ""
+    done
+
+    echo -e "${YELLOW}提示:${RESET} 使用 ${BOLD}tmux-launch ${GREEN}<布局名稱>${RESET} 直接啟動"
+}
+
+verify_layout_script() {
+    local layout=$1
+    local script="$LAYOUTS_DIR/${layout}.sh"
+
+    # 檢查腳本是否存在
+    if [[ ! -f "$script" ]]; then
+        echo -e "${RED}❌ 錯誤: 布局腳本不存在${RESET}"
+        echo -e "   路徑: ${DIM}$script${RESET}"
+        echo -e "${YELLOW}💡 解決方案:${RESET}"
+        echo -e "   1. 確認已執行安裝腳本: ${BOLD}cd tmux && bash install.sh${RESET}"
+        echo -e "   2. 檢查布局目錄: ${BOLD}ls -la ~/.tmux-layouts/${RESET}"
+        return 1
+    fi
+
+    # 檢查執行權限
+    if [[ ! -x "$script" ]]; then
+        echo -e "${YELLOW}⚠️  警告: 布局腳本無執行權限${RESET}"
+        echo -e "   正在修復權限..."
+        chmod +x "$script"
+        if [[ $? -eq 0 ]]; then
+            echo -e "${GREEN}✅ 權限已修復${RESET}"
+        else
+            echo -e "${RED}❌ 無法修復權限，請手動執行:${RESET}"
+            echo -e "   ${BOLD}chmod +x $script${RESET}"
+            return 1
+        fi
+    fi
+
+    return 0
+}
 
 print_header() {
     clear
@@ -51,34 +169,72 @@ print_header() {
 }
 
 print_menu() {
-    echo -e "${CYAN}${BOLD}Select a workspace layout:${RESET}"
-    echo ""
-    echo -e "  ${GREEN}1${RESET} │ ${BOLD}AI Workspace${RESET} (primary layout)"
-    echo -e "    │ ├─ Codex CLI (70%) + Claude Code (30%)"
-    echo -e "    │ └─ Monitor pane for tests/logs"
-    echo ""
-    echo -e "  ${GREEN}2${RESET} │ ${BOLD}AI Compare${RESET} (side-by-side)"
-    echo -e "    │ ├─ Codex vs Claude (50/50 split)"
-    echo -e "    │ └─ Compare two AI outputs"
-    echo ""
-    echo -e "  ${GREEN}3${RESET} │ ${BOLD}Full Focus${RESET} (distraction-free)"
-    echo -e "    │ ├─ Single AI fullscreen (100%)"
-    echo -e "    │ └─ Ideal for deep work"
-    echo ""
-    echo -e "  ${GREEN}4${RESET} │ ${BOLD}Resume${RESET} (attach to existing)"
-    echo -e "    │ └─ List and attach to running sessions"
+    echo -e "${CYAN}${BOLD}╭─────────────────────────────────────────────────────────╮${RESET}"
+    echo -e "${CYAN}${BOLD}│  Select a workspace layout:                            │${RESET}"
+    echo -e "${CYAN}${BOLD}╰─────────────────────────────────────────────────────────╯${RESET}"
     echo ""
 
+    # Layout 1: AI Workspace
+    echo -e "  ${GREEN}${BOLD}1${RESET} │ ${BOLD}${LAYOUT_INFO["ai-workspace:name"]}${RESET}"
+    echo -e "    │ ${DIM}${LAYOUT_INFO["ai-workspace:desc"]}${RESET}"
+    echo -e "    │ ${CYAN}工具:${RESET} ${LAYOUT_INFO["ai-workspace:tools"]}"
+    echo -e "    │ ${DIM}預覽:${RESET}"
+    echo -e "${DIM}$(echo -e "${LAYOUT_INFO["ai-workspace:preview"]}" | sed 's/^/    │   /')${RESET}"
+    echo ""
+
+    # Layout 2: AI Compare
+    echo -e "  ${GREEN}${BOLD}2${RESET} │ ${BOLD}${LAYOUT_INFO["ai-compare:name"]}${RESET}"
+    echo -e "    │ ${DIM}${LAYOUT_INFO["ai-compare:desc"]}${RESET}"
+    echo -e "    │ ${CYAN}工具:${RESET} ${LAYOUT_INFO["ai-compare:tools"]}"
+    echo -e "    │ ${DIM}預覽:${RESET}"
+    echo -e "${DIM}$(echo -e "${LAYOUT_INFO["ai-compare:preview"]}" | sed 's/^/    │   /')${RESET}"
+    echo ""
+
+    # Layout 3: Full Focus
+    echo -e "  ${GREEN}${BOLD}3${RESET} │ ${BOLD}${LAYOUT_INFO["full-focus:name"]}${RESET}"
+    echo -e "    │ ${DIM}${LAYOUT_INFO["full-focus:desc"]}${RESET}"
+    echo -e "    │ ${CYAN}工具:${RESET} ${LAYOUT_INFO["full-focus:tools"]}"
+    echo -e "    │ ${DIM}預覽:${RESET}"
+    echo -e "${DIM}$(echo -e "${LAYOUT_INFO["full-focus:preview"]}" | sed 's/^/    │   /')${RESET}"
+    echo ""
+
+    # Option 4: Resume
+    echo -e "  ${GREEN}${BOLD}4${RESET} │ ${BOLD}Resume${RESET}"
+    echo -e "    │ ${DIM}連接到現有 tmux session${RESET}"
+    echo ""
+
+    # Option 5: Project selector (if fzf available)
     if [[ "$HAS_FZF" == true ]]; then
-        echo -e "  ${GREEN}5${RESET} │ ${BOLD}Project selector${RESET}"
-        echo -e "    │ └─ Use fzf to choose a project directory"
+        echo -e "  ${GREEN}${BOLD}5${RESET} │ ${BOLD}Project Selector${RESET}"
+        echo -e "    │ ${DIM}使用 fzf 選擇專案目錄${RESET}"
         echo ""
     fi
 
-    echo -e "  ${RED}q${RESET} │ ${BOLD}Exit${RESET}"
+    echo -e "  ${RED}${BOLD}q${RESET} │ ${BOLD}Exit${RESET}"
     echo ""
+
+    # Environment variables section
+    echo -e "${YELLOW}╭─────────────────────────────────────────────────────────╮${RESET}"
+    echo -e "${YELLOW}│  環境變數設定 (可自訂 AI 工具)                          │${RESET}"
+    echo -e "${YELLOW}╰─────────────────────────────────────────────────────────╯${RESET}"
+
+    local any_set=false
+    for var in "VIBE_AI_PRIMARY" "VIBE_AI_SECONDARY" "VIBE_AI_LEFT" "VIBE_AI_RIGHT" "VIBE_AI_FOCUS"; do
+        if [[ -n "${!var}" ]]; then
+            echo -e "  ${GREEN}✓${RESET} ${BOLD}$var${RESET}=${MAGENTA}${!var}${RESET}"
+            any_set=true
+        fi
+    done
+
+    if [[ "$any_set" == false ]]; then
+        echo -e "  ${DIM}未設定 (使用預設值)${RESET}"
+        echo -e "  ${DIM}提示: export VIBE_AI_PRIMARY=claude 可自訂工具${RESET}"
+    fi
+    echo ""
+
+    # Project info
     echo -e "${YELLOW}───────────────────────────────────────────────────────${RESET}"
-    echo -e "📁 Current project: ${MAGENTA}$PROJECT_DIR${RESET}"
+    echo -e "📁 當前專案: ${MAGENTA}${BOLD}$PROJECT_DIR${RESET}"
     echo -e "${YELLOW}───────────────────────────────────────────────────────${RESET}"
     echo ""
 }
@@ -150,21 +306,79 @@ launch_layout() {
     local layout=$1
     local script="$LAYOUTS_DIR/${layout}.sh"
 
-    if [[ ! -f "$script" ]]; then
-        echo -e "${RED}❌ Error: layout script '$script' not found${RESET}"
-        echo -e "${YELLOW}💡 Make sure you've run the installer${RESET}"
-        sleep 3
+    # 驗證布局腳本
+    if ! verify_layout_script "$layout"; then
         return 1
     fi
 
-    echo -e "${GREEN}🚀 Launching $layout...${RESET}"
+    echo -e "${GREEN}🚀 正在啟動 ${LAYOUT_INFO[${layout}:name]}...${RESET}"
     sleep 0.5
 
     bash "$script" "$PROJECT_DIR"
 }
 
 # ───────────────────────────────────────────────────────
-# Main Loop
+# Argument Parsing
+# ───────────────────────────────────────────────────────
+
+parse_arguments() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -l|--list)
+                list_layouts
+                exit 0
+                ;;
+            -p|--project)
+                if [[ -z "$2" ]]; then
+                    echo -e "${RED}❌ 錯誤: -p 選項需要指定目錄路徑${RESET}"
+                    echo -e "使用方法: tmux-launch -p <路徑>"
+                    exit 1
+                fi
+                PROJECT_DIR="$2"
+                shift 2
+                ;;
+            ai-workspace|ai-compare|full-focus)
+                # 直接啟動指定的布局
+                if ! verify_layout_script "$1"; then
+                    exit 1
+                fi
+                launch_layout "$1"
+                exit 0
+                ;;
+            -*)
+                echo -e "${RED}❌ 未知選項: $1${RESET}"
+                echo -e "使用 ${BOLD}tmux-launch --help${RESET} 查看幫助"
+                exit 1
+                ;;
+            *)
+                echo -e "${RED}❌ 未知布局: $1${RESET}"
+                echo -e "使用 ${BOLD}tmux-launch --list${RESET} 查看可用布局"
+                exit 1
+                ;;
+        esac
+    done
+}
+
+# ───────────────────────────────────────────────────────
+# Main Entry Point
+# ───────────────────────────────────────────────────────
+
+# 解析命令列參數
+parse_arguments "$@"
+
+# 驗證專案目錄
+if [[ ! -d "$PROJECT_DIR" ]]; then
+    echo -e "${RED}❌ 錯誤: 專案目錄不存在${RESET}"
+    echo -e "   路徑: ${DIM}$PROJECT_DIR${RESET}"
+    exit 1
+fi
+
+# ───────────────────────────────────────────────────────
+# Main Interactive Loop
 # ───────────────────────────────────────────────────────
 
 while true; do

@@ -1,27 +1,24 @@
 # vibe-start 設計文檔
 
 **專案**: VibeGhostty - 智能專案啟動系統
-**版本**: 1.0.0-alpha
+**版本**: 1.0.0-MVP
 **作者**: Frank Yang
-**最後更新**: 2025-10-17
+**最後更新**: 2025-10-19
+
+> **設計哲學**: 從零配置開始，漸進式增強。遵循 YAGNI (You Aren't Gonna Need It) 原則，僅實作確實需要的功能。
 
 ---
 
 ## 📋 目錄
 
 - [專案概述](#專案概述)
-- [設計目標](#設計目標)
+- [MVP 範圍](#mvp-範圍)
 - [技術架構](#技術架構)
-- [配置格式規範](#配置格式規範)
-- [工作流程設計](#工作流程設計)
-- [命令 API 設計](#命令-api-設計)
-- [模板系統](#模板系統)
-- [智能偵測引擎](#智能偵測引擎)
-- [記憶系統](#記憶系統)
-- [健康檢查系統](#健康檢查系統)
-- [UI/UX 設計](#uiux-設計)
+- [配置系統](#配置系統)
+- [專案偵測](#專案偵測)
+- [布局生成](#布局生成)
+- [命令 API](#命令-api)
 - [實施路線圖](#實施路線圖)
-- [技術決策](#技術決策)
 
 ---
 
@@ -37,1479 +34,746 @@
 
 ### 解決方案
 
-`vibe-start` - 智能專案啟動系統：
-- ✅ 一鍵啟動完整開發環境
-- ✅ 自動偵測專案類型和技術棧
-- ✅ 智能選擇最佳布局和命令
-- ✅ 記住用戶偏好，越用越快
-
-### 核心價值主張
+`vibe-start` - 一行命令啟動完整開發環境：
 
 ```bash
-# 傳統方式（8+ 步驟）
+# 傳統方式（8+ 步驟，2-3 分鐘）
 cd my-project
 tmux new -s my-project
-# 手動分割 panes
+# 手動分割 panes...
 claude
-# Ctrl+Space |
+# 切換 pane
 npm run dev
-# Ctrl+Space -
-npm run db:studio
-# ...
+# ...更多手動操作
 
-# vibe-start 方式（1 步驟）
+# vibe-start 方式（1 步驟，< 5 秒）
 cd my-project
 vibe-start
-# 完成！環境就緒
+# 完成！
 ```
+
+### 核心價值
+
+1. **零配置啟動** - 90% 場景無需任何配置
+2. **智能偵測** - 自動識別專案類型和推薦布局
+3. **快速啟動** - < 5 秒完成環境準備
+4. **低學習成本** - 新用戶 < 1 分鐘上手
 
 ---
 
-## 設計目標
+## MVP 範圍
 
-### 核心目標
+### v1.0 目標（1-2 週完成）
 
-1. **零學習成本**: 新用戶 `vibe-start` 即可使用
-2. **智能化**: 自動理解專案並推薦最佳配置
-3. **快速啟動**: 熟悉專案 < 3 秒完全就緒
-4. **高度靈活**: 支援從零配置到完全自訂
+**核心功能**：
+- ✅ 偵測 3-5 種主流專案類型（Next.js, Node.js, Python）
+- ✅ 單一布局生成（ai-workspace）
+- ✅ Port 衝突檢查（3000, 5432）
+- ✅ 互動式預覽和確認
+- ✅ 基礎錯誤處理
 
-### 非目標
+**明確不做**（v1.1+）：
+- ❌ 多模式支援（dev, debug, review）
+- ❌ 自訂模板系統
+- ❌ 記憶系統
+- ❌ 配置文件（.vibeproject）
+- ❌ 進階健康檢查
+- ❌ Post-start actions
+- ❌ Hooks 系統
 
-- ❌ 不取代 IDE（VS Code, JetBrains）
-- ❌ 不管理 Docker/Kubernetes（僅啟動本地服務）
-- ❌ 不處理部署流程（僅開發環境）
+### 功能優先級矩陣
 
-### 成功指標
+| 功能 | 價值 | 成本 | 風險 | MVP分數 | 版本 |
+|------|------|------|------|---------|------|
+| 零配置啟動 | 10 | 4 | 2 | 9.0 | v1.0 |
+| 專案類型偵測 | 10 | 4 | 3 | 8.7 | v1.0 |
+| package.json 解析 | 9 | 3 | 2 | 8.3 | v1.0 |
+| Port 衝突檢查 | 8 | 2 | 1 | 8.7 | v1.0 |
+| 互動式預覽 | 6 | 3 | 2 | 5.7 | v1.0 |
+| 記憶系統 | 7 | 5 | 3 | 6.0 | v1.1 |
+| .vibeproject 支援 | 9 | 6 | 4 | 6.3 | v1.1 |
+| 多模式支援 | 8 | 7 | 5 | 4.7 | v1.1 |
+| 自訂模板系統 | 6 | 8 | 6 | 2.7 | v2.0 |
+| Hooks 系統 | 5 | 7 | 5 | 1.7 | v2.0 |
 
-- 90% 專案可零配置啟動
-- 用戶平均啟動時間 < 5 秒
-- 首次使用成功率 > 95%
-- 配置文件可讀性評分 > 8/10
+**評分公式**: `MVP分數 = (價值 × 2 - 成本 - 風險) / 3`
 
 ---
 
 ## 技術架構
 
-### 系統架構圖
+### 核心組件
 
 ```
-┌─────────────────────────────────────────────────┐
-│  vibe-start (CLI Entry Point)                   │
-│  - 參數解析                                     │
-│  - 工作流程協調                                 │
-└──────────────┬──────────────────────────────────┘
-               │
-┌──────────────┴──────────────────────────────────┐
-│  Core Modules                                    │
-├──────────────────────────────────────────────────┤
-│  ┌─────────────────┐  ┌─────────────────┐      │
-│  │ Project         │  │ Template        │      │
-│  │ Detector        │  │ Engine          │      │
-│  │ - 類型偵測      │  │ - 模板解析      │      │
-│  │ - 命令解析      │  │ - 布局生成      │      │
-│  └─────────────────┘  └─────────────────┘      │
-│                                                  │
-│  ┌─────────────────┐  ┌─────────────────┐      │
-│  │ Memory          │  │ Health          │      │
-│  │ System          │  │ Checker         │      │
-│  │ - 偏好記憶      │  │ - 環境檢查      │      │
-│  │ - 快速恢復      │  │ - 服務啟動      │      │
-│  └─────────────────┘  └─────────────────┘      │
-└──────────────┬──────────────────────────────────┘
-               │
-┌──────────────┴──────────────────────────────────┐
-│  Infrastructure Layer                            │
-├──────────────────────────────────────────────────┤
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐         │
-│  │ ta      │  │ tmux-   │  │ layouts/│         │
-│  │ (複用)  │  │ launch  │  │ *.sh    │         │
-│  │         │  │ (複用)  │  │ (複用)  │         │
-│  └─────────┘  └─────────┘  └─────────┘         │
-└──────────────┬──────────────────────────────────┘
-               │
-┌──────────────┴──────────────────────────────────┐
-│  Tmux + Ghostty (Execution Environment)         │
-└──────────────────────────────────────────────────┘
+vibe-start (主執行檔)
+├── lib/
+│   ├── detect_project.sh      # 專案類型偵測
+│   ├── parse_package_json.sh  # 命令解析
+│   ├── check_port.sh           # Port 檢查
+│   ├── generate_layout.sh      # 布局生成
+│   └── show_preview.sh         # 互動式預覽
+└── tests/
+    ├── test_detect.sh
+    ├── test_nextjs.sh
+    └── test_python.sh
 ```
 
-### 組件職責
+### 執行流程（MVP）
 
-#### 1. Project Detector（專案偵測器）
-- 掃描專案目錄特徵
-- 識別技術棧（Node.js, Python, Go, etc.）
-- 解析可用命令（package.json scripts, Makefile）
-- 推薦適合的布局模板
+```bash
+vibe-start
+│
+├─ 1. 偵測專案類型
+│   ├─ 檢查 package.json → Next.js
+│   ├─ 檢查 requirements.txt → Python
+│   └─ 否則 → Generic
+│
+├─ 2. 解析專案命令
+│   ├─ package.json scripts.dev
+│   └─ package.json scripts.test
+│
+├─ 3. Port 衝突檢查
+│   ├─ 檢查 3000 (dev server)
+│   └─ 檢查 5432 (Prisma)
+│
+├─ 4. 顯示預覽
+│   ├─ 專案類型
+│   ├─ 即將執行的命令
+│   └─ 布局預覽 (ASCII art)
+│
+├─ 5. 確認啟動 [Y/n]
+│   └─ Y → 繼續，n → 取消
+│
+└─ 6. 生成布局
+    └─ 呼叫 ai-workspace.sh 邏輯
+```
 
-#### 2. Template Engine（模板引擎）
-- 載入布局模板
-- 變數替換和命令注入
-- 生成 Tmux 腳本
-- 支援自訂模板
+### 依賴關係
 
-#### 3. Memory System（記憶系統）
-- 記錄專案偏好（~/.vibe/memory.json）
-- 快速恢復上次配置
-- 學習用戶習慣
+**必需**：
+- Bash >= 4.0
+- Tmux >= 3.0
+- Git（專案偵測）
 
-#### 4. Health Checker（健康檢查器）
-- 啟動前環境驗證
-- Port 衝突檢測
-- 依賴完整性檢查
-- 服務狀態監控
+**可選**：
+- jq（JSON 解析，v1.0 使用 grep 替代）
+
+**複用現有資源**：
+- `~/.tmux-layouts/ai-workspace.sh`
+- `~/.local/bin/ta`
+- 環境變數系統（VIBE_AI_PRIMARY, VIBE_AI_SECONDARY）
 
 ---
 
-## 配置格式規範
+## 配置系統
 
-### .vibeproject 完整格式
+### v1.0 策略：零配置 + 環境變數
 
-```yaml
-# ============================================
-# VibeGhostty Project Configuration
-# Format Version: 1.0
-# ============================================
+**設計原則**：
+- v1.0 **不支援配置文件**
+- 使用現有環境變數系統
+- 提供合理預設值（90% 場景夠用）
 
-version: "1.0"
-name: "Project Display Name"
-description: "Optional project description"
-type: nextjs-prisma  # 專案類型（可選，自動偵測）
+**可用環境變數**：
 
-# --------------------------------------------
-# Quick Start Settings
-# --------------------------------------------
-quick_start: true  # 啟用記憶快速啟動
-auto_confirm: false  # 自動確認（不顯示預覽）
+```bash
+# AI 工具選擇（複用現有）
+export VIBE_AI_PRIMARY=claude     # 主要 AI 工具
+export VIBE_AI_SECONDARY=codex    # 輔助 AI 工具
 
-# --------------------------------------------
-# Mode Definitions
-# --------------------------------------------
-modes:
-  # 開發模式（預設）
-  dev:
-    description: "開發模式 - Full stack development"
-    layout:
-      # 使用預設模板或自訂
-      template: full-stack-web  # 預設模板名稱
-      # 或使用 custom: true 完全自訂
-
-      panes:
-        - name: "🤖 Claude Code"
-          size: 50%  # 百分比或固定值
-          position: main  # main | top | bottom | left | right
-          path: .  # 工作目錄（相對於專案根目錄）
-          command: claude  # 執行命令
-          focus: true  # 啟動時 focus
-          color: blue  # pane 顏色標記（可選）
-          title: "AI Assistant"  # pane 標題
-
-        - name: "🚀 Dev Server"
-          size: 25%
-          position: bottom-left
-          path: .
-          command: npm run dev
-          wait_for: 3  # 等待秒數後啟動
-          auto_restart: true  # 崩潰時自動重啟
-          health_check:
-            type: http  # http | tcp | process
-            url: "http://localhost:3000"
-            interval: 5  # 檢查間隔（秒）
-            timeout: 30  # 超時時間
-
-        - name: "💾 Database"
-          size: 15%
-          command: npm run db:studio
-          auto_restart: false
-          on_exit: warn  # warn | ignore | restart
-
-        - name: "📊 Logs"
-          size: 10%
-          command: tail -f .next/trace
-          scroll_mode: true  # 啟用自動滾動
-
-  # Debug 模式
-  debug:
-    description: "Debug 模式 - With Node Inspector"
-    layout:
-      custom: true
-      panes:
-        - name: "Claude"
-          command: claude
-        - name: "Node Debug"
-          command: npm run dev-debug
-          env:
-            NODE_OPTIONS: "--inspect"
-        - name: "Chrome DevTools"
-          command: open chrome://inspect
-
-  # Code Review 模式
-  review:
-    description: "Code Review - 雙 AI 比較"
-    layout:
-      template: ai-compare
-      panes:
-        - name: "Codex CLI"
-          command: codex
-        - name: "Claude Code"
-          command: claude
-        - name: "Git Diff"
-          command: git diff --staged
-
-# --------------------------------------------
-# Pre-Start Checks（啟動前檢查）
-# --------------------------------------------
-pre_start:
-  checks:
-    # Port 檢查
-    - type: port
-      port: 3000
-      action: prompt  # prompt | kill | skip | error
-      message: "Port 3000 is in use. Kill existing process?"
-
-    # Port 群組檢查
-    - type: port_group
-      ports: [3000, 5432, 6379]
-      action: kill_all
-
-    # 環境檔案檢查
-    - type: env_file
-      required: true
-      file: .env
-      example: .env.example
-      action: copy_if_missing  # copy_if_missing | error | skip
-
-    # 服務檢查
-    - type: service
-      name: postgresql
-      action: start_if_down  # start_if_down | error | skip
-
-    # 依賴檢查
-    - type: dependencies
-      check: node_modules
-      action: prompt_install  # prompt_install | auto_install | skip
-      command: npm install
-
-    # Python venv 檢查
-    - type: python_venv
-      path: ./venv
-      action: create_if_missing
-      python_version: "3.11"
-
-    # 自訂命令檢查
-    - type: command
-      command: which docker
-      required: true
-      error_message: "Docker is required but not installed"
-
-# --------------------------------------------
-# Post-Start Actions（啟動後執行）
-# --------------------------------------------
-post_start:
-  actions:
-    - type: message
-      text: "🚀 Development environment ready!"
-
-    - type: command
-      command: echo "Server starting..."
-      delay: 2  # 延遲秒數
-
-    - type: open_url
-      url: "http://localhost:3000"
-      delay: 5
-      browser: "Google Chrome"  # 可選
-
-    - type: notify
-      title: "VibeGhostty"
-      message: "Project started successfully"
-
-# --------------------------------------------
-# Environment Variables（環境變數）
-# --------------------------------------------
-env:
-  NODE_ENV: development
-  DEBUG: "app:*"
-  NEXT_TELEMETRY_DISABLED: "1"
-  DATABASE_URL: "postgresql://localhost:5432/mydb"
-
-# --------------------------------------------
-# Aliases（命令別名）
-# --------------------------------------------
-aliases:
-  db: "npm run db:studio"
-  migrate: "npm run db:push"
-  logs: "tail -f .next/trace"
-  reset: "npm run db:reset && npm run dev"
-
-# --------------------------------------------
-# Hooks（生命週期鉤子）
-# --------------------------------------------
-hooks:
-  before_start:
-    - git fetch origin  # 拉取最新代碼
-    - npm run type-check  # 型別檢查
-
-  after_start:
-    - echo "Ready to code!"
-
-  before_stop:
-    - git stash  # 暫存未提交變更
-
-  on_error:
-    - echo "Error occurred. Check logs."
-
-# --------------------------------------------
-# Advanced Settings（進階設定）
-# --------------------------------------------
-settings:
-  # Session 名稱模板
-  session_name: "${project_name}-${mode}"  # 變數: project_name, mode, date
-
-  # 日誌設定
-  logging:
-    enabled: true
-    path: .vibe/logs
-    level: info  # debug | info | warn | error
-
-  # 性能設定
-  performance:
-    startup_timeout: 60  # 總啟動超時（秒）
-    parallel_start: true  # 並行啟動 panes
-
-  # UI 設定
-  ui:
-    show_preview: true  # 顯示啟動預覽
-    confirm_timeout: 10  # 自動確認超時（秒）
-    use_emoji: true  # 使用 emoji 圖標
+# 行為控制（新增）
+export VIBE_AUTO_START=true       # 跳過確認自動啟動
+export VIBE_CHECK_PORTS=true      # 啟用 port 檢查
 ```
 
-### 配置驗證規則
+**為什麼不做配置文件？**
+1. **開發成本高**: 需要 YAML 解析器、驗證器（+3-5 天）
+2. **學習成本高**: 用戶需要學習配置格式
+3. **非核心需求**: 環境變數已足夠靈活
+4. **可延後**: v1.1 再評估實際需求
 
-```yaml
-# schema.yaml (配置驗證規則)
-version:
-  type: string
-  required: true
-  pattern: "^\d+\.\d+$"
+### v1.1+ 配置系統（未來）
 
-name:
-  type: string
-  required: false
-  max_length: 50
+**兩級配置**：
+- 全局：`~/.vibe/config`
+- 專案：`.vibe/config`
 
-modes:
-  type: object
-  required: true
-  min_properties: 1
-  properties:
-    [mode_name]:
-      type: object
-      properties:
-        description:
-          type: string
-        layout:
-          type: object
-          required: true
-          properties:
-            template:
-              type: string
-              enum: [full-stack-web, ai-workspace, ai-compare, cli-development, custom]
-            panes:
-              type: array
-              min_items: 1
-              max_items: 10
+**格式**（Shell Source）：
+```bash
+# .vibe/config
+VIBE_AI_PRIMARY=claude
+VIBE_AI_SECONDARY=codex
+VIBE_DEFAULT_LAYOUT=ai-workspace
+```
+
+**優先級**：
+```
+命令列參數 > 環境變數 > 專案配置 > 全局配置 > 預設值
+```
+
+詳細設計見：`VIBE_CONFIG_DESIGN.md`
+
+---
+
+## 專案偵測
+
+### 支援的專案類型（v1.0）
+
+#### 1. Next.js 專案
+
+**偵測規則**：
+```bash
+# 檢查 package.json
+grep -q '"next"' package.json
+
+# 偵測 Prisma
+grep -q '"@prisma/client"' package.json
+```
+
+**提取命令**：
+```bash
+dev_command=$(grep '"dev"' package.json | sed 's/.*: "\(.*\)".*/\1/')
+test_command=$(grep '"test"' package.json | sed 's/.*: "\(.*\)".*/\1/')
+```
+
+**推薦布局**：ai-workspace
+- Pane 1 (70%): Claude/Codex
+- Pane 2 (30%): `npm run dev`
+- Pane 3 (30%): `npx prisma studio` (如果有 Prisma)
+
+#### 2. Node.js 專案
+
+**偵測規則**：
+```bash
+# 有 package.json 但沒有 next
+[ -f package.json ] && ! grep -q '"next"' package.json
+```
+
+**提取命令**：同 Next.js
+
+**推薦布局**：ai-workspace
+
+#### 3. Python 專案
+
+**偵測規則**：
+```bash
+# 檢查 requirements.txt 或 pyproject.toml
+[ -f requirements.txt ] || [ -f pyproject.toml ]
+```
+
+**提取命令**：
+```bash
+# 檢查 常見啟動方式
+if [ -f manage.py ]; then
+  dev_command="python manage.py runserver"  # Django
+elif [ -f main.py ]; then
+  dev_command="python main.py"
+else
+  dev_command="python -m pytest"  # 預設跑測試
+fi
+```
+
+**推薦布局**：ai-workspace
+
+#### 4. Generic（預設）
+
+**偵測規則**：
+```bash
+# 以上都不符合
+else
+```
+
+**推薦布局**：ai-workspace（僅啟動 AI 工具，監控 pane 空白）
+
+### 偵測結果格式
+
+```bash
+# 輸出格式（用於 --detect）
+Project Type: nextjs-prisma
+Dev Command:  npm run dev
+Test Command: npm test
+DB Command:   npx prisma studio
+Recommended:  ai-workspace
 ```
 
 ---
 
-## 工作流程設計
+## 布局生成
 
-### 1. 零配置流程（首次使用）
+### v1.0 策略：複用 ai-workspace.sh
 
-```mermaid
-graph TD
-    A[cd project && vibe-start] --> B{檢查 .vibeproject}
-    B -->|不存在| C[專案偵測引擎]
-    C --> D[掃描目錄特徵]
-    D --> E[識別專案類型]
-    E --> F[解析可用命令]
-    F --> G[推薦布局]
-    G --> H[顯示互動式預覽]
-    H --> I{用戶確認?}
-    I -->|Y| J[啟動環境]
-    I -->|n| K[取消]
-    I -->|c| L[自訂配置]
-    J --> M[保存到記憶系統]
-    M --> N[完成]
-```
+**為什麼只支援單一布局？**
+1. **ai-workspace 已驗證可用**（Phase 2 完成測試）
+2. **70/30 分割適用 90% 場景**
+3. **減少測試組合**（單一布局 vs 多布局）
+4. **降低實作複雜度**
 
-### 2. 記憶恢復流程（已使用過）
-
-```mermaid
-graph TD
-    A[cd project && vibe-start] --> B[檢查記憶系統]
-    B --> C{找到記錄?}
-    C -->|是| D[載入上次配置]
-    D --> E[顯示快速啟動提示]
-    E --> F{3秒倒數}
-    F -->|Enter/Y| G[立即啟動]
-    F -->|c| H[自訂]
-    F -->|n| I[取消]
-    G --> J[完成]
-```
-
-### 3. 配置文件流程（有 .vibeproject）
-
-```mermaid
-graph TD
-    A[cd project && vibe-start] --> B[檢查 .vibeproject]
-    B -->|存在| C[解析 YAML 配置]
-    C --> D[驗證配置格式]
-    D -->|有效| E[執行 pre_start 檢查]
-    E --> F{所有檢查通過?}
-    F -->|是| G[生成 Tmux 腳本]
-    F -->|否| H[顯示錯誤]
-    G --> I[啟動 Session]
-    I --> J[執行 post_start 動作]
-    J --> K[完成]
-    H --> L[提供修復建議]
-```
-
----
-
-## 命令 API 設計
-
-### 主命令
+**生成邏輯**：
 
 ```bash
-vibe-start [OPTIONS] [MODE]
-```
-
-### 選項列表
-
-```bash
-# 基礎選項
--h, --help              顯示幫助訊息
--v, --version           顯示版本號
--V, --verbose           詳細輸出
--q, --quiet             安靜模式（最小輸出）
-
-# 模式選擇
--m, --mode MODE         指定啟動模式（dev, debug, review）
--l, --list-modes        列出所有可用模式
-
-# 配置管理
--i, --init              初始化配置文件
--c, --config FILE       使用指定配置文件
--e, --edit              編輯配置文件
---validate              驗證配置文件格式
-
-# 行為控制
--y, --yes               自動確認所有提示
--n, --no-memory         不使用記憶系統
--f, --force             強制啟動（跳過檢查）
---dry-run               預覽不執行
-
-# 專案偵測
--t, --type TYPE         指定專案類型
---detect                僅顯示偵測結果
---suggest               僅顯示建議配置
-
-# Session 管理
--s, --session NAME      指定 session 名稱
--d, --detach            啟動後 detach
--a, --attach            Attach 到現有 session
-
-# Debug
---debug                 Debug 模式
---trace                 追蹤執行過程
---log FILE              輸出日誌到文件
-```
-
-### 使用範例
-
-```bash
-# 基礎使用
-vibe-start                      # 零配置啟動
-vibe-start dev                  # 啟動 dev 模式
-vibe-start --mode debug         # 同上
-
-# 配置管理
-vibe-start --init               # 生成配置模板
-vibe-start --edit               # 編輯配置
-vibe-start --validate           # 驗證配置
-vibe-start --config custom.yaml # 使用自訂配置
-
-# 專案偵測
-vibe-start --detect             # 僅顯示偵測結果
-vibe-start --suggest            # 顯示建議配置
-vibe-start --type nextjs        # 強制指定類型
-
-# 進階使用
-vibe-start --yes --mode dev     # 自動確認啟動
-vibe-start --dry-run            # 預覽不執行
-vibe-start --no-memory          # 忽略記憶
-vibe-start --force              # 跳過所有檢查
-
-# Session 管理
-vibe-start -s my-session        # 自訂 session 名稱
-vibe-start -d                   # 啟動後 detach
-vibe-start -a my-session        # Attach 到現有
-
-# Debug
-vibe-start --debug              # Debug 輸出
-vibe-start --trace              # 追蹤每一步
-vibe-start --log /tmp/vibe.log  # 輸出日誌
-```
-
-### 子命令
-
-```bash
-# 配置管理
-vibe-start config init          # 初始化配置
-vibe-start config edit          # 編輯配置
-vibe-start config validate      # 驗證配置
-vibe-start config show          # 顯示當前配置
-
-# 模板管理
-vibe-start template list        # 列出所有模板
-vibe-start template show NAME   # 顯示模板內容
-vibe-start template create NAME # 創建自訂模板
-vibe-start template export      # 匯出當前配置為模板
-
-# 記憶管理
-vibe-start memory list          # 列出所有記憶
-vibe-start memory show PROJECT  # 顯示專案記憶
-vibe-start memory clear PROJECT # 清除專案記憶
-vibe-start memory reset         # 重置所有記憶
-
-# 健康檢查
-vibe-start check                # 執行所有檢查
-vibe-start check port           # 僅檢查 port
-vibe-start check env            # 僅檢查環境
-vibe-start check deps           # 僅檢查依賴
-```
-
----
-
-## 模板系統
-
-### 預設模板庫
-
-#### 1. full-stack-web.yaml
-
-```yaml
-# Full-Stack Web Development Template
-name: "Full-Stack Web"
-description: "4-pane layout for full-stack development"
-适用: ["nextjs", "nextjs-prisma", "remix", "nuxt"]
-
-layout:
-  type: grid
-  structure: |
-    ┌─────────────────┬──────────┐
-    │  Claude Code    │  Logs    │
-    │  (50%)          │  (25%)   │
-    ├─────────────────┼──────────┤
-    │  Dev Server     │  DB Tool │
-    │  (25%)          │  (25%)   │
-    └─────────────────┴──────────┘
-
-panes:
-  - name: "Claude Code"
-    size: 50%
-    command: "claude"
-
-  - name: "Dev Server"
-    size: 25%
-    command: "${dev_command}"
-
-  - name: "Database"
-    size: 15%
-    command: "${db_command}"
-    condition: "${has_database}"
-
-  - name: "Logs"
-    size: 10%
-    command: "tail -f ${log_file}"
-
-variables:
-  dev_command: "npm run dev"
-  db_command: "npm run db:studio"
-  log_file: ".next/trace"
-  has_database: true
-```
-
-#### 2. ai-workspace.yaml
-
-```yaml
-# AI Workspace Template (70/30 split)
-name: "AI Workspace"
-description: "Main AI tool with side panels"
-适用: ["generic", "cli", "library"]
-
-layout:
-  type: main-sidebar
-  structure: |
-    ┌─────────────────────────┬─────────────┐
-    │   Codex CLI (70%)       │  Claude     │
-    │   主要工作區            │  Code (30%) │
-    │                         ├─────────────┤
-    │                         │  Monitor    │
-    └─────────────────────────┴─────────────┘
-
-panes:
-  - name: "Codex CLI"
-    size: 70%
-    command: "codex"
-    focus: true
-
-  - name: "Claude Code"
-    size: 15%
-    command: "claude"
-
-  - name: "Monitor"
-    size: 15%
-    command: "${monitor_command}"
-
-variables:
-  monitor_command: "npm test -- --watch"
-```
-
-#### 3. ai-compare.yaml
-
-```yaml
-# AI Compare Template (50/50 split)
-name: "AI Compare"
-description: "Side-by-side AI comparison"
-适用: ["code-review", "comparison"]
-
-layout:
-  type: split-vertical
-  structure: |
-    ┌────────────────┬────────────────┐
-    │  Codex CLI     │  Claude Code   │
-    │  (50%)         │  (50%)         │
-    ├────────────────┴────────────────┤
-    │  Compare/Monitor (25%)          │
-    └─────────────────────────────────┘
-
-panes:
-  - name: "Codex CLI"
-    size: 50%
-    command: "codex"
-
-  - name: "Claude Code"
-    size: 50%
-    command: "claude"
-
-  - name: "Comparison"
-    size: 25%
-    command: "git diff --staged"
-```
-
-#### 4. python-dev.yaml
-
-```yaml
-# Python Development Template
-name: "Python Development"
-description: "Python project with venv"
-适用: ["python", "fastapi", "django"]
-
-layout:
-  type: horizontal
-
-panes:
-  - name: "Claude Code"
-    size: 60%
-    command: "claude"
-
-  - name: "Python REPL/Server"
-    size: 40%
-    command: |
-      source ${venv_path}/bin/activate
-      ${python_command}
-
-variables:
-  venv_path: "./venv"
-  python_command: "uvicorn main:app --reload"
-```
-
-#### 5. cli-development.yaml
-
-```yaml
-# CLI Tool Development Template
-name: "CLI Development"
-description: "Simple 2-pane for CLI tools"
-适用: ["cli", "library", "typescript"]
-
-layout:
-  type: horizontal
-
-panes:
-  - name: "Claude Code"
-    size: 70%
-    command: "claude"
-    focus: true
-
-  - name: "Tests (Watch)"
-    size: 30%
-    command: "${test_command}"
-
-variables:
-  test_command: "npm test -- --watch"
-```
-
-### 模板變數系統
-
-```yaml
-# 內建變數
-${project_name}         # 專案名稱
-${project_path}         # 專案絕對路徑
-${project_type}         # 專案類型
-${mode}                 # 當前模式
-${date}                 # 當前日期 YYYY-MM-DD
-${time}                 # 當前時間 HH:MM:SS
-${user}                 # 當前用戶名
-
-# 偵測變數
-${dev_command}          # 偵測到的 dev 命令
-${build_command}        # 偵測到的 build 命令
-${test_command}         # 偵測到的 test 命令
-${db_command}           # 偵測到的 database 命令
-${has_database}         # 是否有資料庫
-${has_docker}           # 是否使用 Docker
-${port}                 # 偵測到的 port
-
-# 條件變數
-${if:has_database}      # 條件判斷
-${endif}
-```
-
----
-
-## 智能偵測引擎
-
-### 偵測策略
-
-```bash
-#!/bin/bash
-# detect_project.sh
-
-detect_project_type() {
-  local project_dir="$1"
-
-  # Node.js 專案
-  if [ -f "$project_dir/package.json" ]; then
-    # 檢查框架
-    if grep -q "next" "$project_dir/package.json"; then
-      # 檢查是否有 Prisma
-      if grep -q "@prisma/client" "$project_dir/package.json"; then
-        echo "nextjs-prisma"
-        return 0
-      fi
-      echo "nextjs"
-      return 0
-    fi
-
-    if grep -q "vite" "$project_dir/package.json"; then
-      echo "vite"
-      return 0
-    fi
-
-    if grep -q "react-scripts" "$project_dir/package.json"; then
-      echo "create-react-app"
-      return 0
-    fi
-
-    echo "nodejs"
-    return 0
-  fi
-
-  # Python 專案
-  if [ -f "$project_dir/pyproject.toml" ]; then
-    if grep -q "fastapi" "$project_dir/pyproject.toml"; then
-      echo "fastapi"
-      return 0
-    fi
-    echo "python"
-    return 0
-  fi
-
-  if [ -f "$project_dir/requirements.txt" ]; then
-    echo "python"
-    return 0
-  fi
-
-  # Go 專案
-  if [ -f "$project_dir/go.mod" ]; then
-    echo "golang"
-    return 0
-  fi
-
-  # Rust 專案
-  if [ -f "$project_dir/Cargo.toml" ]; then
-    echo "rust"
-    return 0
-  fi
-
-  # Full-Stack 專案
-  if [ -d "$project_dir/frontend" ] && [ -d "$project_dir/backend" ]; then
-    echo "fullstack"
-    return 0
-  fi
-
-  # Makefile 專案
-  if [ -f "$project_dir/Makefile" ]; then
-    echo "makefile"
-    return 0
-  fi
-
-  # 預設
-  echo "generic"
-  return 0
-}
-```
-
-### 命令解析器
-
-```bash
-#!/bin/bash
-# parse_commands.sh
-
-parse_package_json_scripts() {
-  local package_json="$1"
-
-  # 提取所有 scripts
-  jq -r '.scripts // {} | to_entries | .[] | "\(.key):\(.value)"' "$package_json"
-}
-
-categorize_commands() {
-  local commands="$1"
-
-  declare -A categorized
-
-  while IFS=: read -r name command; do
-    case "$name" in
-      dev|start|serve)
-        categorized[dev]="$command"
-        ;;
-      build|compile)
-        categorized[build]="$command"
-        ;;
-      test|jest|vitest)
-        categorized[test]="$command"
-        ;;
-      db:*|prisma:*)
-        categorized[database]="$command"
-        ;;
-      lint|format)
-        categorized[quality]="$command"
-        ;;
-    esac
-  done <<< "$commands"
-
-  # 輸出分類結果
-  for category in "${!categorized[@]}"; do
-    echo "$category:${categorized[$category]}"
-  done
-}
-```
-
-### 推薦引擎
-
-```bash
-#!/bin/bash
-# recommend_layout.sh
-
-recommend_layout() {
+generate_layout() {
   local project_type="$1"
-  local has_database="$2"
-  local has_frontend="$3"
-  local has_backend="$4"
+  local dev_command="$2"
+  local session_name="ai-$(basename "$PWD")"
 
-  case "$project_type" in
-    nextjs-prisma|nextjs)
-      if [ "$has_database" = "true" ]; then
-        echo "full-stack-web"
-      else
-        echo "frontend-dev"
-      fi
-      ;;
-    fullstack)
-      echo "fullstack-dual"
-      ;;
-    python|fastapi|django)
-      echo "python-dev"
-      ;;
-    cli|library|typescript)
-      echo "cli-development"
-      ;;
-    *)
-      echo "ai-workspace"
-      ;;
-  esac
+  # 複用 ai-workspace.sh 邏輯
+  tmux new-session -d -s "$session_name" -c "$PWD"
+
+  # Pane 0: 主要 AI 工具 (70%)
+  tmux select-pane -t 0 -T "🔧 ${VIBE_AI_PRIMARY:-codex}"
+  if command -v "${VIBE_AI_PRIMARY:-codex}" &>/dev/null; then
+    tmux send-keys -t "$session_name:0.0" "${VIBE_AI_PRIMARY:-codex}" C-m
+  else
+    tmux send-keys -t "$session_name:0.0" "echo '⚠️  AI 工具未安裝'" C-m
+  fi
+
+  # Pane 1: 輔助 AI 工具 (30%)
+  tmux split-window -h -p 30 -t "$session_name:0" -c "$PWD"
+  tmux select-pane -t 1 -T "🤖 ${VIBE_AI_SECONDARY:-claude}"
+  # ... 同上
+
+  # Pane 2: 監控 (30%)
+  tmux split-window -v -p 50 -t "$session_name:0.1" -c "$PWD"
+  tmux select-pane -t 2 -T "📊 Monitor"
+
+  # 如果有 dev_command，在監控 pane 執行
+  if [ -n "$dev_command" ]; then
+    tmux send-keys -t "$session_name:0.2" "$dev_command" C-m
+  fi
+
+  # Attach
+  tmux select-pane -t 0
+  tmux attach-session -t "$session_name"
 }
 ```
+
+**與 ai-workspace.sh 的差異**：
+- 自動填入 `dev_command`（而非手動）
+- Session 名稱基於專案名稱（`ai-{project}`）
+- 監控 pane 自動執行 dev 命令（可選）
 
 ---
 
-## 記憶系統
+## 命令 API
 
-### 記憶檔案結構
-
-```json
-// ~/.vibe/memory.json
-{
-  "version": "1.0",
-  "projects": {
-    "/Users/frank/projects/my-nextjs-app": {
-      "name": "my-nextjs-app",
-      "type": "nextjs-prisma",
-      "last_mode": "dev",
-      "last_used": "2025-10-17T14:30:00Z",
-      "usage_count": 15,
-      "avg_startup_time": 4.2,
-      "preferences": {
-        "auto_confirm": true,
-        "pane_sizes": {
-          "claude": 55,
-          "dev": 25,
-          "db": 15,
-          "logs": 5
-        },
-        "custom_commands": {
-          "dev": "npm run dev -- --turbo"
-        }
-      },
-      "history": [
-        {
-          "date": "2025-10-17",
-          "mode": "dev",
-          "startup_time": 3.8,
-          "duration": 7200
-        }
-      ]
-    }
-  },
-  "global_preferences": {
-    "default_mode": "dev",
-    "show_preview": true,
-    "auto_confirm_timeout": 10,
-    "preferred_ai": "claude"
-  }
-}
-```
-
-### 學習邏輯
+### v1.0 命令集（精簡）
 
 ```bash
-#!/bin/bash
-# memory_learn.sh
-
-update_memory() {
-  local project_path="$1"
-  local mode="$2"
-  local startup_time="$3"
-
-  # 讀取現有記憶
-  local memory_file="$HOME/.vibe/memory.json"
-
-  # 更新記憶
-  jq --arg path "$project_path" \
-     --arg mode "$mode" \
-     --arg time "$startup_time" \
-     --arg now "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
-     '
-     .projects[$path] += {
-       "last_mode": $mode,
-       "last_used": $now,
-       "usage_count": ((.projects[$path].usage_count // 0) + 1),
-       "avg_startup_time": (
-         ((.projects[$path].avg_startup_time // 0) * (.projects[$path].usage_count // 0) + ($time | tonumber)) /
-         ((.projects[$path].usage_count // 0) + 1)
-       )
-     }
-     ' "$memory_file" > "$memory_file.tmp"
-
-  mv "$memory_file.tmp" "$memory_file"
-}
+vibe-start                  # 零配置啟動
+vibe-start --help          # 顯示幫助
+vibe-start --version       # 顯示版本
+vibe-start --detect        # 僅顯示偵測結果（不啟動）
+vibe-start --dry-run       # 預覽不執行
 ```
 
----
+**移除的選項**（v1.1+）：
+- ❌ `--mode <mode>` - 多模式支援
+- ❌ `--config <file>` - 配置文件
+- ❌ `--yes` - 自動確認
+- ❌ `--init` - 初始化配置
+- ❌ 子命令系統（config, template, memory, check）
 
-## 健康檢查系統
+### 幫助訊息範例
 
-### 檢查器實現
-
-```bash
-#!/bin/bash
-# health_checks.sh
-
-# Port 檢查
-check_port() {
-  local port="$1"
-  local action="$2"
-
-  if lsof -ti:$port > /dev/null 2>&1; then
-    case "$action" in
-      prompt)
-        echo "⚠️  Port $port is in use"
-        read -p "   Kill existing process? [Y/n]: " choice
-        case "$choice" in
-          y|Y|"")
-            kill -9 $(lsof -ti:$port)
-            echo "✅ Port $port freed"
-            ;;
-          *)
-            echo "❌ Cancelled"
-            return 1
-            ;;
-        esac
-        ;;
-      kill)
-        kill -9 $(lsof -ti:$port)
-        echo "✅ Port $port freed"
-        ;;
-      skip)
-        echo "⚠️  Port $port is in use (skipped)"
-        ;;
-      error)
-        echo "❌ Port $port is in use"
-        return 1
-        ;;
-    esac
-  else
-    echo "✅ Port $port is available"
-  fi
-
-  return 0
-}
-
-# 環境檔案檢查
-check_env_file() {
-  local env_file="$1"
-  local example_file="$2"
-  local action="$3"
-
-  if [ ! -f "$env_file" ]; then
-    echo "❌ $env_file not found"
-
-    case "$action" in
-      copy_if_missing)
-        if [ -f "$example_file" ]; then
-          read -p "   Copy from $example_file? [Y/n]: " choice
-          case "$choice" in
-            y|Y|"")
-              cp "$example_file" "$env_file"
-              echo "✅ Created $env_file from $example_file"
-              ;;
-          esac
-        fi
-        ;;
-      error)
-        return 1
-        ;;
-    esac
-  else
-    echo "✅ $env_file exists"
-  fi
-
-  return 0
-}
-
-# 服務檢查
-check_service() {
-  local service="$1"
-  local action="$2"
-
-  case "$service" in
-    postgresql)
-      if ! pgrep -x postgres > /dev/null; then
-        echo "❌ PostgreSQL is not running"
-
-        if [ "$action" = "start_if_down" ]; then
-          read -p "   Start PostgreSQL? [Y/n]: " choice
-          case "$choice" in
-            y|Y|"")
-              brew services start postgresql
-              echo "✅ PostgreSQL started"
-              ;;
-          esac
-        fi
-      else
-        echo "✅ PostgreSQL is running"
-      fi
-      ;;
-  esac
-
-  return 0
-}
-
-# 依賴檢查
-check_dependencies() {
-  local check_path="$1"
-  local action="$2"
-  local install_cmd="$3"
-
-  if [ ! -d "$check_path" ]; then
-    echo "❌ Dependencies not installed ($check_path missing)"
-
-    case "$action" in
-      prompt_install)
-        read -p "   Run '$install_cmd'? [Y/n]: " choice
-        case "$choice" in
-          y|Y|"")
-            eval "$install_cmd"
-            echo "✅ Dependencies installed"
-            ;;
-        esac
-        ;;
-      auto_install)
-        eval "$install_cmd"
-        echo "✅ Dependencies installed"
-        ;;
-    esac
-  else
-    echo "✅ Dependencies installed"
-  fi
-
-  return 0
-}
 ```
+vibe-start - 智能專案啟動系統
 
----
+用法:
+  vibe-start                零配置啟動開發環境
+  vibe-start --detect       顯示專案偵測結果
+  vibe-start --dry-run      預覽即將執行的命令
+  vibe-start --help         顯示此幫助訊息
+  vibe-start --version      顯示版本資訊
 
-## UI/UX 設計
+環境變數:
+  VIBE_AI_PRIMARY          主要 AI 工具 (預設: codex)
+  VIBE_AI_SECONDARY        輔助 AI 工具 (預設: claude)
+  VIBE_AUTO_START          跳過確認 (預設: false)
+  VIBE_CHECK_PORTS         啟用 port 檢查 (預設: true)
+
+範例:
+  # 基礎使用
+  cd my-nextjs-project
+  vibe-start
+
+  # 查看偵測結果
+  vibe-start --detect
+
+  # 預覽不執行
+  vibe-start --dry-run
+
+  # 自訂 AI 工具
+  export VIBE_AI_PRIMARY=claude
+  vibe-start
+
+更多資訊: README.md, QUICKSTART_VIBESTART.md
+```
 
 ### 互動式預覽
 
-```bash
-# 首次使用預覽
-🔍 分析專案...
-   ✓ 偵測到: Node.js + Next.js 14
-   ✓ 框架: Next.js with Prisma
-   ✓ 可用命令: dev, build, test, db:studio
+```
+╭─────────────────────────────────────────────────────────╮
+│  🔍 專案偵測結果                                        │
+╰─────────────────────────────────────────────────────────╯
 
-📊 專案特徵:
-   - Frontend: React + TypeScript
-   - Database: PostgreSQL (Prisma)
-   - API: Next.js API Routes
+  專案類型:   Next.js + Prisma
+  專案路徑:   /Users/frank/my-project
+  Dev 命令:   npm run dev
+  Test 命令:  npm test
+  DB 工具:    npx prisma studio
 
-🎨 推薦布局: Full-Stack Web (4 panes)
+╭─────────────────────────────────────────────────────────╮
+│  📐 布局預覽                                            │
+╰─────────────────────────────────────────────────────────╯
 
-   ┌─────────────────┬──────────┐
-   │  Claude Code    │  Logs    │
-   │  (50%)          │  (25%)   │
-   ├─────────────────┼──────────┤
-   │  Dev Server     │  DB      │
-   │  (25%)          │  (25%)   │
-   └─────────────────┴──────────┘
+  ┌─────────────────────────┬─────────────┐
+  │   Claude (70%)          │  Codex      │
+  │   主要 AI 工具          │  (30%)      │
+  │                         ├─────────────┤
+  │                         │  npm run dev│
+  │                         │  (30%)      │
+  └─────────────────────────┴─────────────┘
 
-預覽命令:
-  Pane 1 [🤖 Claude]: claude
-  Pane 2 [🚀 Dev]: npm run dev
-  Pane 3 [💾 DB]: npm run db:studio
-  Pane 4 [📊 Logs]: tail -f .next/trace
+╭─────────────────────────────────────────────────────────╮
+│  ⚠️  Port 檢查                                          │
+╰─────────────────────────────────────────────────────────╯
 
-確認啟動? [Y/n/c(customize)] █
+  ✅ Port 3000 可用
+  ✅ Port 5432 可用
+
+─────────────────────────────────────────────────────────
+
+啟動此環境? [Y/n/c]
+  Y - 確認啟動
+  n - 取消
+  c - 自訂 (v1.1 支援)
+
+>
 ```
 
-### 快速啟動提示
+---
+
+## Port 檢查
+
+### v1.0 實作
+
+**僅檢查 2 個 ports**：
+- 3000: Next.js/Vite dev server
+- 5432: PostgreSQL (僅 Prisma 專案)
+
+**檢查流程**：
 
 ```bash
-# 已記憶專案
-💾 找到已儲存配置
-   上次使用: 2 天前 (dev mode)
-   平均啟動: 4.2s
-   使用次數: 15 次
+check_port() {
+  local port="$1"
+  local service="$2"
 
-🚀 快速啟動
-   Layout: Full-Stack Web
-   4 panes: Claude | Dev | DB | Logs
+  if lsof -ti:$port > /dev/null 2>&1; then
+    echo "⚠️  Port $port 被佔用 ($service)"
+    echo "   是否 kill 佔用進程? [Y/n]"
+    read -r choice
 
-   3 秒後自動啟動...
+    if [[ "$choice" != "n" && "$choice" != "N" ]]; then
+      kill -9 $(lsof -ti:$port)
+      echo "✅ Port $port 已釋放"
+    else
+      echo "⚠️  啟動可能失敗"
+    fi
+  else
+    echo "✅ Port $port 可用"
+  fi
+}
 
-   [Enter] 立即啟動  [c] 自訂  [n] 取消  █
+# 使用
+check_port 3000 "Next.js dev server"
+[ "$HAS_PRISMA" = true ] && check_port 5432 "PostgreSQL"
 ```
 
-### 進度指示器
+**為什麼只檢查 2 個？**
+1. **覆蓋 90% 場景**：大部分專案只用這兩個
+2. **降低複雜度**：不需要 port 範圍掃描
+3. **快速執行**：< 0.5 秒完成檢查
+
+**v1.1+ 可擴展**：
+- 從 .vibeproject 讀取額外 ports
+- 支援 port 範圍掃描
+- 自動偵測常見服務 ports（8080, 27017...）
+
+---
+
+## 錯誤處理
+
+### 基礎錯誤處理
 
 ```bash
-# 啟動過程
-🚀 啟動 my-nextjs-app (dev mode)
+# 1. Tmux 未安裝
+if ! command -v tmux &>/dev/null; then
+  echo "❌ 錯誤：未安裝 tmux"
+  echo "   安裝方法：brew install tmux"
+  exit 1
+fi
 
-✅ Pre-start checks (1.2s)
-   ✓ Port 3000 available
-   ✓ .env exists
-   ✓ PostgreSQL running
-   ✓ node_modules installed
+# 2. AI 工具未安裝（警告但繼續）
+if ! command -v "${VIBE_AI_PRIMARY:-codex}" &>/dev/null; then
+  echo "⚠️  警告：'${VIBE_AI_PRIMARY:-codex}' 未安裝"
+  echo "   安裝方法：npm install -g @codexhq/cli"
+  echo "   將顯示提示訊息而非啟動工具"
+fi
 
-⏳ Creating Tmux session... (0.5s)
-⏳ Setting up panes... (1.0s)
-   ✓ Pane 1: Claude Code
-   ✓ Pane 2: Dev Server
-   ✓ Pane 3: Database
-   ✓ Pane 4: Logs
+# 3. Session 已存在
+if tmux has-session -t "$session_name" 2>/dev/null; then
+  echo "📌 Session '$session_name' 已存在"
+  echo "   1) Attach 到現有 session"
+  echo "   2) Kill 並重新建立"
+  echo "   3) 取消"
+  read -p "選擇 [1/2/3]: " choice
+  # ... 處理邏輯
+fi
 
-⏳ Starting services... (2.5s)
-   ✓ Dev server starting on port 3000
-   ✓ Prisma Studio on port 5555
-
-✅ Environment ready! (Total: 4.2s)
-
-🌐 Opening http://localhost:3000...
+# 4. Port kill 失敗
+if ! kill -9 $(lsof -ti:$port) 2>/dev/null; then
+  echo "❌ 無法 kill port $port"
+  echo "   請手動處理：lsof -ti:$port | xargs kill -9"
+fi
 ```
 
-### 錯誤處理
-
-```bash
-# 啟動失敗
-❌ Startup failed!
-
-Error in Pane 2 (Dev Server):
-   Port 3000 already in use
-   Process: node (PID 12345)
-
-建議操作:
-   1. [K] Kill process and retry
-   2. [C] Change port to 3001
-   3. [V] View full error log
-   4. [Q] Quit
-
-選擇 [1-4]: █
-```
-
-### 快速切換與臨時控制視窗
-
-- 在 tmux 中綁定 `prefix + m` 觸發 `display-menu`，列出常用模式（例如 `dev`、`debug`、`review`）。
-- 使用者選擇後，臨時執行 `split-window -v -p 20 -b -c "#{pane_current_path}" zsh`（或 `new-window`）建立短暫控制終端。
-- 在該控制 pane/window 內執行 `vibe-start --mode <選項>` 以重建或切換 session，完成後自動 `kill-pane`/`kill-window` 清理。
-- 原布局不需預留固定控制 pane，僅在需要時才呼叫終端，維持視覺整潔並提供可選的快速模式切換。
+**錯誤處理原則**：
+- 清晰的錯誤訊息
+- 提供解決建議
+- 永遠不要無提示崩潰
+- 嚴重錯誤退出（exit 1），警告繼續（exit 0）
 
 ---
 
 ## 實施路線圖
 
-### 階段 1: MVP (Week 1-2)
+### Week 1: 核心實作
 
-**目標**: 基礎功能可用
+**Day 1-2: 專案偵測引擎**
+```bash
+✅ lib/detect_project.sh
+  - detect_nextjs()
+  - detect_nodejs()
+  - detect_python()
+  - detect_generic()
 
-**任務**:
-- [ ] 創建 vibe-start 主腳本
-- [ ] 實現專案類型偵測（5 種類型）
-- [ ] 創建 3 個預設模板
-- [ ] 實現互動式選單
-- [ ] 基礎錯誤處理
+✅ lib/parse_package_json.sh
+  - get_dev_command()
+  - get_test_command()
+  - has_prisma()
+```
 
-**交付物**:
-- vibe-start 可執行檔
-- 3 個模板（nextjs, python, generic）
-- 基礎文檔
+**Day 3: 布局生成 + Port 檢查**
+```bash
+✅ lib/generate_layout.sh
+  - 複用 ai-workspace.sh 邏輯
+  - 動態填入 dev_command
 
-**成功標準**:
-- 能偵測 Next.js 專案
-- 能啟動 4-pane 布局
-- 能執行基礎命令
+✅ lib/check_port.sh
+  - check_port()
+  - kill_port()
+```
 
-### 階段 2: 智能化 (Week 3-4)
+**Day 4: CLI + 互動式預覽**
+```bash
+✅ vibe-start (主腳本)
+  - 參數解析
+  - 流程編排
 
-**目標**: 智能偵測和記憶系統
+✅ lib/show_preview.sh
+  - show_detection_result()
+  - show_layout_preview()
+  - confirm_start()
+```
 
-**任務**:
-- [ ] 實現記憶系統（~/.vibe/memory.json）
-- [ ] package.json scripts 解析器
-- [ ] 啟動前健康檢查（3 種）
-- [ ] .vibeproject YAML 解析
-- [ ] 配置驗證器
-
-**交付物**:
-- 記憶系統
-- 健康檢查器
-- YAML 配置支援
-
-**成功標準**:
-- 第二次啟動 < 3 秒
-- 自動檢測 port 衝突
-- 可讀取 .vibeproject
-
-### 階段 3: 進階功能 (Week 5-6)
-
-**目標**: 多模式和進階配置
-
-**任務**:
-- [ ] 多模式支援（dev, debug, review）
-- [ ] 動態 pane 調整
-- [ ] 模板變數系統
-- [ ] Post-start actions
-- [ ] 命令別名系統
-
-**交付物**:
-- 多模式支援
-- 完整模板系統
-- 進階配置範例
-
-**成功標準**:
-- 支援 3+ 模式切換
-- 模板變數可正常替換
-- Post-start 鉤子可執行
-
-### 階段 4: 優化和文檔 (Week 7-8)
-
-**目標**: 穩定性和用戶體驗
-
-**任務**:
-- [ ] 性能優化（並行啟動）
-- [ ] 錯誤訊息優化
-- [ ] 完整用戶文檔
-- [ ] 範例專案配置
-- [ ] 測試覆蓋
-
-**交付物**:
-- 完整用戶手冊
-- 10+ 配置範例
-- 測試套件
-
-**成功標準**:
-- 啟動時間 < 5 秒
-- 錯誤訊息清晰
-- 文檔完整
+**Day 5: 錯誤處理 + 整合測試**
+```bash
+✅ 錯誤處理邏輯
+✅ 端到端測試（3 種專案類型）
+✅ Bug fixes
+```
 
 ---
 
-## 技術決策
+### Week 2: 優化和文檔
 
-### 1. 為什麼選擇 YAML？
+**Day 6: 優化體驗**
+- 優化輸出訊息和色彩
+- 改進 ASCII 預覽圖
+- 效能優化（< 5 秒啟動）
 
-**對比分析**:
+**Day 7: 文檔和範例**
+- 撰寫 `QUICKSTART_VIBESTART.md`
+- 更新 `README.md`
+- 建立 3 個範例專案配置
 
-| 格式 | 優點 | 缺點 | 分數 |
-|------|------|------|------|
-| YAML | 可讀性高、支援註解、層次清晰 | 需要 yq 工具 | ⭐⭐⭐⭐⭐ |
-| JSON | 原生支援、jq 廣泛 | 無註解、可讀性差 | ⭐⭐⭐ |
-| TOML | 簡單明瞭 | 嵌套支援弱 | ⭐⭐⭐ |
+**檢查點**：
+- ✅ 能否在 < 5 秒內啟動 Next.js 專案？
+- ✅ 新用戶能否零學習成本使用？
+- ✅ 錯誤訊息是否清晰？
 
-**決定**: 選擇 YAML
-**原因**:
-- 用戶專案多為複雜配置
-- 需要註解幫助團隊理解
-- yq 工具成熟易用
+---
 
-### 2. 為什麼複用現有工具？
+## 版本規劃
 
-**現有工具**:
-- `ta`: Session 管理
-- `tmux-launch`: 布局引擎
-- `layouts/*.sh`: 布局腳本
+### v1.0 MVP（1-2 週）✅ 當前
 
-**決定**: 複用而非重寫
-**原因**:
-- 避免重複造輪子
-- 保持架構一致性
-- 降低維護成本
+**核心功能**：
+- 零配置啟動
+- 專案類型偵測（3-5 種）
+- 單一布局（ai-workspace）
+- Port 檢查（2 個）
+- 互動式預覽
 
-### 3. 記憶系統存儲位置
+**交付標準**：
+- 能偵測 90% 的 Next.js 專案
+- < 5 秒完成啟動
+- 錯誤率 < 5%
+- 新用戶成功率 > 95%
 
-**選項**:
-- 專案內（.vibe/）
-- 用戶目錄（~/.vibe/）
-- 系統目錄（/var/lib/vibe/）
+---
 
-**決定**: `~/.vibe/memory.json`
-**原因**:
-- 跨專案共享
-- 不污染專案目錄
-- 用戶完全控制
+### v1.1 增強版（2-3 週後）
 
-### 4. 健康檢查策略
+**新增功能**：
+- 記憶系統（~/.vibe/memory.json）
+- .vibeproject 配置文件支援
+- 多模式支援（dev, debug, review）
+- 環境變數檢查（.env）
+- `--yes`, `--mode`, `--config` 選項
 
-**選項**:
-- 全部自動修復
-- 全部提示用戶
-- 智能選擇
+**工時估計**: 5-7 天
 
-**決定**: 智能選擇 + 可配置
-**原因**:
-- Port 衝突: 提示（可能故意的）
-- 缺少 .env: 自動複製（安全）
-- 服務未啟動: 提示（可能不需要）
+---
 
-### 5. 模板變數語法
+### v2.0 進階版（未來）
 
-**選項**:
-- `$var` (Shell style)
-- `{{var}}` (Mustache style)
-- `${var}` (混合 style)
+**新增功能**：
+- 自訂模板系統
+- Post-start Actions
+- Hooks 系統
+- 智能學習引擎
+- 服務啟動管理
 
-**決定**: `${var}`
-**原因**:
-- 與 Shell 變數一致
-- 支援條件判斷 `${if:var}`
-- 易於解析
+**工時估計**: 10-15 天
+
+---
+
+## 技術決策記錄
+
+### 決策 1: 為什麼 v1.0 不支援配置文件？
+
+**背景**：原設計包含 380 行 YAML 配置
+
+**決策**：v1.0 僅使用環境變數，配置文件延後到 v1.1
+
+**理由**：
+1. **開發成本**：YAML 解析 + 驗證 = +3-5 天
+2. **學習成本**：用戶需要學習配置格式
+3. **非核心需求**：環境變數已足夠
+4. **風險控制**：先驗證用戶需求
+
+**影響**：
+- ✅ v1.0 可在 2 週內完成
+- ✅ 降低用戶學習成本
+- ⚠️ v1.1 需要實作配置系統
+
+---
+
+### 決策 2: 為什麼只支援單一布局？
+
+**背景**：設計包含多模式支援（dev, debug, review）
+
+**決策**：v1.0 僅 ai-workspace，其他布局延後
+
+**理由**：
+1. **ai-workspace 已驗證可用**
+2. **70/30 分割適用 90% 場景**
+3. **減少測試組合**
+4. **降低實作複雜度**
+
+**影響**：
+- ✅ 實作時間 -3 天
+- ✅ 測試複雜度降低
+- ⚠️ 少數用戶可能需要其他布局
+
+---
+
+### 決策 3: 為什麼移除健康檢查系統？
+
+**背景**：設計包含 9 種檢查類型（port, service, env_file, python_venv...）
+
+**決策**：v1.0 僅 port 檢查，其他延後
+
+**理由**：
+1. **實作成本高**：9 種檢查 = +6-8 天
+2. **邊緣案例多**：PostgreSQL, Docker 等環境差異大
+3. **非核心需求**：port 檢查覆蓋 90% 場景
+
+**影響**：
+- ✅ 實作時間 -6 天
+- ✅ 降低維護成本
+- ⚠️ 少數場景可能需要手動處理
+
+---
+
+### 決策 4: 為什麼不實作記憶系統？
+
+**背景**：設計包含使用統計、學習演算法、歷史記錄
+
+**決策**：v1.0 不實作，v1.1 簡化版本
+
+**理由**：
+1. **過度設計**：統計和學習非核心需求
+2. **實作成本高**：+4-6 天
+3. **資料結構複雜**：維護困難
+
+**影響**：
+- ✅ 實作時間 -5 天
+- ✅ 降低複雜度
+- ⚠️ 用戶需要每次選擇（v1.1 解決）
+
+---
+
+## 成功標準
+
+### 功能完整性
+- ✅ 能偵測 90% 的 Next.js 專案
+- ✅ 能在 < 5 秒內完成啟動（零配置）
+- ✅ 錯誤率 < 5%（100 次測試，< 5 次失敗）
+- ✅ 首次使用成功率 > 95%
+
+### 用戶體驗
+- ✅ 新用戶能在 < 1 分鐘內理解如何使用
+- ✅ 錯誤訊息清晰，提供解決建議
+- ✅ 無需閱讀文檔即可完成基礎使用
+
+### 技術品質
+- ✅ 腳本語法檢查通過（`bash -n`）
+- ✅ 支援 Bash 4.0+, Tmux 3.0+
+- ✅ 無硬編碼路徑（除 ~/.vibe/）
+- ✅ 錯誤處理覆蓋率 > 80%
 
 ---
 
 ## 附錄
 
-### A. 專案類型偵測規則表
+### 相關文檔
 
-| 專案類型 | 偵測特徵 | 推薦模板 | 常用命令 |
-|---------|---------|---------|---------|
-| nextjs-prisma | package.json (next + @prisma/client) | full-stack-web | dev, db:studio |
-| nextjs | package.json (next) | frontend-dev | dev, build |
-| vite | package.json (vite) | frontend-dev | dev, build |
-| fastapi | pyproject.toml (fastapi) | python-dev | uvicorn |
-| python | requirements.txt or pyproject.toml | python-dev | python |
-| golang | go.mod | cli-development | go run |
-| rust | Cargo.toml | cli-development | cargo run |
-| fullstack | frontend/ + backend/ | fullstack-dual | make dev |
-| generic | - | ai-workspace | - |
+- `VIBE_CONFIG_DESIGN.md` - 兩級配置系統設計（v1.1+）
+- `MVP_ANALYSIS.md` - 完整 MVP 分析報告
+- `COMPLEXITY_ANALYSIS.md` - 過度設計分析報告
 
-### B. 配置驗證錯誤碼
+### 設計演進
 
-| 錯誤碼 | 說明 | 範例 |
-|-------|------|------|
-| E001 | 缺少必要欄位 | `version` field is required |
-| E002 | 格式錯誤 | Invalid YAML syntax at line 10 |
-| E003 | 類型不符 | `size` must be a number |
-| E004 | 超出範圍 | `panes` count exceeds maximum (10) |
-| E005 | 無效值 | Unknown template: `invalid-template` |
-| E006 | 命令不存在 | Command `npm run invalid` not found |
-| W001 | 建議性警告 | Consider adding `pre_start` checks |
-
-### C. 性能基準
-
-| 操作 | 目標時間 | 最大時間 |
-|------|---------|---------|
-| 專案偵測 | < 0.5s | 1s |
-| 配置解析 | < 0.2s | 0.5s |
-| 健康檢查 | < 2s | 5s |
-| Session 創建 | < 1s | 2s |
-| 總啟動時間（首次） | < 5s | 10s |
-| 總啟動時間（記憶） | < 3s | 5s |
-
-### D. 相容性矩陣
-
-| 工具/版本 | 最低要求 | 推薦版本 | 測試版本 |
-|----------|---------|---------|---------|
-| Bash | 4.0 | 5.0+ | 5.2 |
-| Tmux | 3.0 | 3.3+ | 3.4 |
-| yq | 4.0 | 4.30+ | 4.35 |
-| jq | 1.6 | 1.7+ | 1.7 |
-| macOS | 11.0 | 13.0+ | 14.0 |
+| 版本 | 配置行數 | 功能數量 | 實作時間 | 狀態 |
+|------|---------|---------|---------|------|
+| 原設計 | 380 行 | 30+ 個 | 8 週 | ❌ 棄用 |
+| MVP 設計 | 0 行（環境變數） | 6 個 | 2 週 | ✅ 當前 |
+| v1.1 設計 | < 30 行 | 12 個 | 1 週 | 🔵 未來 |
 
 ---
 
-## 版本歷史
-
-### v1.0.0-alpha (2025-10-17)
-- 初始設計文檔
-- 定義核心架構
-- 規範配置格式
-- 設計工作流程
-
----
-
-**文檔狀態**: ✅ 完成初稿
-**下一步**: 開始 MVP 實作
-**負責人**: Frank Yang
-**審查**: 待定
+**最後更新**: 2025-10-19
+**狀態**: ✅ 設計完成，等待實作
+**下一步**: Week 1 Day 1 - 建立專案偵測引擎

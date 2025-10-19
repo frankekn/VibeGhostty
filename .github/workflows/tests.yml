@@ -1,0 +1,50 @@
+name: Tests
+
+on:
+  push:
+    branches: [ master, develop, 'refactor/**' ]
+  pull_request:
+    branches: [ master, develop ]
+
+jobs:
+  test:
+    name: Run Bats Tests
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Bats
+        run: |
+          brew install bats-core
+
+      - name: Install Tmux
+        run: |
+          brew install tmux
+
+      - name: Run tests
+        run: |
+          cd tests
+          bats *.bats
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: tests/*.log
+
+  shellcheck:
+    name: Shell Script Linting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: './tmux'
+          severity: warning
