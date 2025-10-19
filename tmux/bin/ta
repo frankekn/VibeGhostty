@@ -5,13 +5,14 @@
 # ═══════════════════════════════════════════════════════
 #
 # 快速 attach 到當前專案的 tmux session
-# 只需輸入 2 個字元即可！
+# 只需輸入 2 個字元即可！支援 fuzzy matching！
 #
 # Usage:
-#   ta              自動偵測當前專案
-#   ta -l           列出所有 session
-#   ta -n NAME      attach 到指定 session
-#   ta -h           顯示幫助
+#   ta                   自動偵測當前專案
+#   ta -l                列出所有 session
+#   ta -n NAME           attach 到指定 session (支援模糊匹配)
+#   ta -s PATTERN        搜尋匹配的 sessions
+#   ta -h                顯示幫助
 #
 # ═══════════════════════════════════════════════════════
 
@@ -63,13 +64,15 @@ show_help() {
 EOF
     echo -e "${BOLD}${BLUE}用法：${RESET}"
     echo ""
-    echo "  ta              自動偵測當前專案並 attach"
-    echo "  ta -l           列出所有 tmux session"
-    echo "  ta --list       同上"
-    echo "  ta -n NAME      attach 到指定名稱的 session"
-    echo "  ta --name NAME  同上"
-    echo "  ta -h           顯示此幫助"
-    echo "  ta --help       同上"
+    echo "  ta                   自動偵測當前專案並 attach"
+    echo "  ta -l                列出所有 tmux session (詳細表格)"
+    echo "  ta --list            同上"
+    echo "  ta -n NAME           attach 到指定名稱的 session (支援模糊匹配)"
+    echo "  ta --name NAME       同上"
+    echo "  ta -s PATTERN        搜尋匹配 pattern 的 sessions"
+    echo "  ta --search PATTERN  同上"
+    echo "  ta -h                顯示此幫助"
+    echo "  ta --help            同上"
     echo ""
     echo -e "${BOLD}${ORANGE}功能特色：${RESET}"
     echo ""
@@ -77,9 +80,15 @@ EOF
     echo "     • Git repo → session 名稱 = ai-{repo_name}"
     echo "     • 非 git → session 名稱 = ai-{directory_name}"
     echo ""
-    echo "  🔍 智能檢查"
-    echo "     • Session 存在 → 直接 attach"
-    echo "     • Session 不存在 → 詢問是否建立"
+    echo "  🔍 模糊匹配 (Fuzzy Matching)"
+    echo "     • 部分匹配：'vibe' 可匹配 'ai-vibeghostty'"
+    echo "     • 不區分大小寫：'WORK' 可匹配 'ai-work'"
+    echo "     • 多個匹配 → 互動式選單讓你選擇"
+    echo ""
+    echo "  📋 增強列表顯示"
+    echo "     • 表格格式顯示 session 資訊"
+    echo "     • 顯示視窗數、創建時間、attached 狀態"
+    echo "     • 使用顏色和 emoji 提升可讀性"
     echo ""
     echo "  🔄 Tmux 內部支援"
     echo "     • 已在 tmux 內 → 使用 switch-client"
@@ -91,11 +100,16 @@ EOF
     echo "  $ cd ~/projects/VibeGhostty"
     echo "  $ ta"
     echo ""
-    echo "  # 列出所有 session"
-    echo "  $ ta -l"
+    echo "  # 模糊匹配 session 名稱"
+    echo "  $ ta -n vibe          # 匹配 'ai-vibeghostty'"
+    echo "  $ ta -n work          # 匹配所有包含 'work' 的 sessions"
     echo ""
-    echo "  # 指定 session 名稱"
-    echo "  $ ta -n ai-myproject"
+    echo "  # 搜尋特定 pattern"
+    echo "  $ ta -s ai-           # 列出所有以 'ai-' 開頭的 sessions"
+    echo "  $ ta -s backend       # 列出所有包含 'backend' 的 sessions"
+    echo ""
+    echo "  # 列出所有 session（增強表格格式）"
+    echo "  $ ta -l"
     echo ""
     echo "════════════════════════════════════════════════════════════"
     echo ""
@@ -112,18 +126,86 @@ list_sessions() {
         return 1
     fi
 
-    echo -e "${BOLD}${CYAN}📋 可用的 Tmux Sessions:${RESET}"
+    echo -e "${BOLD}${CYAN}📋 可用的 Tmux Sessions${RESET}"
     echo ""
 
-    # 使用 tmux 格式化輸出
-    tmux list-sessions -F "#{session_name}|#{session_windows}|#{session_attached}" | while IFS='|' read -r name windows attached; do
+    # 表格標題
+    printf "  ${BOLD}%-3s %-30s %-8s %-20s %-10s${RESET}\n" "#" "Session Name" "Windows" "Created" "Status"
+    echo "  ────────────────────────────────────────────────────────────────────────────"
+
+    # 讀取所有 sessions 並排序
+    local index=1
+    tmux list-sessions -F "#{session_name}|#{session_windows}|#{session_created}|#{session_attached}" | sort | while IFS='|' read -r name windows created attached; do
+        # 格式化創建時間
+        local created_time=$(date -r "$created" "+%Y-%m-%d %H:%M" 2>/dev/null || echo "Unknown")
+
+        # 根據 attached 狀態設定顯示
         if [[ "$attached" == "1" ]]; then
-            echo -e "  ${GREEN}●${RESET} ${BOLD}$name${RESET} (${windows} windows, ${GREEN}attached${RESET})"
+            local status="${GREEN}✓ Attached${RESET}"
+            local name_display="${BOLD}${GREEN}$name${RESET}"
+            local icon="${GREEN}●${RESET}"
         else
-            echo -e "  ${YELLOW}○${RESET} $name (${windows} windows)"
+            local status="${YELLOW}○ Detached${RESET}"
+            local name_display="$name"
+            local icon="${YELLOW}○${RESET}"
         fi
+
+        # 輸出表格行
+        printf "  ${icon} %-2s %-30s %-8s %-20s %b\n" "$index" "$name_display" "$windows" "$created_time" "$status"
+        index=$((index + 1))
     done
 
+    echo ""
+}
+
+# 搜尋 sessions（支援正則表達式）
+search_sessions() {
+    local pattern="$1"
+
+    if ! tmux list-sessions &>/dev/null; then
+        print_warning "目前沒有任何 tmux session"
+        return 1
+    fi
+
+    echo -e "${BOLD}${CYAN}🔍 搜尋結果 (pattern: '$pattern')${RESET}"
+    echo ""
+
+    # 使用 grep 進行不區分大小寫搜尋
+    local matches=$(tmux list-sessions -F "#{session_name}" | grep -i "$pattern" || true)
+
+    if [[ -z "$matches" ]]; then
+        print_warning "沒有找到匹配 '$pattern' 的 session"
+        echo ""
+        echo "建議："
+        echo "  • 使用 ${ORANGE}ta -l${RESET} 查看所有 sessions"
+        echo "  • 確認拼寫是否正確"
+        echo ""
+        return 1
+    fi
+
+    # 顯示匹配的 sessions（使用表格格式）
+    printf "  ${BOLD}%-3s %-30s %-8s %-10s${RESET}\n" "#" "Session Name" "Windows" "Status"
+    echo "  ───────────────────────────────────────────────────────────"
+
+    local index=1
+    echo "$matches" | while read -r name; do
+        local session_info=$(tmux list-sessions -F "#{session_name}|#{session_windows}|#{session_attached}" | grep "^${name}|")
+        IFS='|' read -r _ windows attached <<< "$session_info"
+
+        if [[ "$attached" == "1" ]]; then
+            local status="${GREEN}✓ Attached${RESET}"
+            local icon="${GREEN}●${RESET}"
+        else
+            local status="${YELLOW}○ Detached${RESET}"
+            local icon="${YELLOW}○${RESET}"
+        fi
+
+        printf "  ${icon} %-2s %-30s %-8s %b\n" "$index" "$name" "$windows" "$status"
+        index=$((index + 1))
+    done
+
+    echo ""
+    echo "找到 $(echo "$matches" | wc -l | tr -d ' ') 個匹配的 sessions"
     echo ""
 }
 
@@ -148,6 +230,89 @@ get_project_session_name() {
 check_session_exists() {
     local session_name="$1"
     tmux has-session -t "$session_name" 2>/dev/null
+}
+
+# Fuzzy matching - 尋找匹配的 sessions
+find_matching_sessions() {
+    local pattern="$1"
+
+    if ! tmux list-sessions &>/dev/null; then
+        return 1
+    fi
+
+    # 先嘗試精確匹配
+    if tmux has-session -t "$pattern" 2>/dev/null; then
+        echo "$pattern"
+        return 0
+    fi
+
+    # 使用 grep 進行不區分大小寫的模糊匹配
+    local matches=$(tmux list-sessions -F "#{session_name}" | grep -i "$pattern" || true)
+
+    if [[ -n "$matches" ]]; then
+        echo "$matches"
+        return 0
+    fi
+
+    return 1
+}
+
+# 互動式選擇 session
+select_session_interactive() {
+    local matches="$1"
+    local pattern="$2"
+
+    local match_count=$(echo "$matches" | wc -l | tr -d ' ')
+
+    # 只有一個匹配，直接返回
+    if [[ "$match_count" -eq 1 ]]; then
+        echo "$matches"
+        return 0
+    fi
+
+    # 多個匹配，顯示選單
+    echo ""
+    echo -e "${BOLD}${CYAN}🔍 找到 $match_count 個匹配 '$pattern' 的 sessions${RESET}"
+    echo ""
+
+    # 顯示選單
+    printf "  ${BOLD}%-3s %-30s %-8s %-10s${RESET}\n" "#" "Session Name" "Windows" "Status"
+    echo "  ───────────────────────────────────────────────────────────"
+
+    local index=1
+    local -a session_array=()
+
+    while IFS= read -r name; do
+        session_array+=("$name")
+        local session_info=$(tmux list-sessions -F "#{session_name}|#{session_windows}|#{session_attached}" | grep "^${name}|")
+        IFS='|' read -r _ windows attached <<< "$session_info"
+
+        if [[ "$attached" == "1" ]]; then
+            local status="${GREEN}✓ Attached${RESET}"
+            local icon="${GREEN}●${RESET}"
+        else
+            local status="${YELLOW}○ Detached${RESET}"
+            local icon="${YELLOW}○${RESET}"
+        fi
+
+        printf "  ${icon} %-2s %-30s %-8s %b\n" "$index" "$name" "$windows" "$status"
+        index=$((index + 1))
+    done <<< "$matches"
+
+    echo ""
+    echo -e "${BOLD}選擇要 attach 的 session (輸入編號或按 Ctrl+C 取消):${RESET}"
+    read -p "> " choice
+
+    # 驗證輸入
+    if [[ ! "$choice" =~ ^[0-9]+$ ]] || [[ "$choice" -lt 1 ]] || [[ "$choice" -gt "$match_count" ]]; then
+        echo ""
+        print_error "無效的選擇: $choice"
+        return 1
+    fi
+
+    # 返回選中的 session
+    echo "${session_array[$((choice - 1))]}"
+    return 0
 }
 
 attach_to_session() {
@@ -230,6 +395,19 @@ main() {
             list_sessions
             return 0
             ;;
+        -s|--search)
+            if [[ -z "${2:-}" ]]; then
+                print_error "請指定搜尋 pattern"
+                echo ""
+                echo "用法：ta -s PATTERN"
+                echo "範例：ta -s ai-    (搜尋所有以 'ai-' 開頭的 sessions)"
+                echo ""
+                return 1
+            fi
+
+            search_sessions "$2"
+            return 0
+            ;;
         -n|--name)
             if [[ -z "${2:-}" ]]; then
                 print_error "請指定 session 名稱"
@@ -240,16 +418,50 @@ main() {
                 return 1
             fi
 
-            local session_name="$2"
+            local input_name="$2"
 
-            if check_session_exists "$session_name"; then
-                attach_to_session "$session_name"
-            else
-                print_error "Session '$session_name' 不存在"
+            # 先嘗試精確匹配
+            if check_session_exists "$input_name"; then
+                attach_to_session "$input_name"
+                return 0
+            fi
+
+            # 精確匹配失敗，嘗試模糊匹配
+            print_info "Session '$input_name' 不存在，嘗試模糊匹配..."
+            echo ""
+
+            local matches=$(find_matching_sessions "$input_name")
+            local match_result=$?
+
+            if [[ $match_result -ne 0 ]] || [[ -z "$matches" ]]; then
+                print_error "沒有找到匹配 '$input_name' 的 session"
+                echo ""
+                echo "建議："
+                echo "  • 使用 ${ORANGE}ta -l${RESET} 查看所有可用的 sessions"
+                echo "  • 使用 ${ORANGE}ta -s '$input_name'${RESET} 搜尋相關的 sessions"
+                echo "  • 確認拼寫是否正確（支援不區分大小寫）"
+                echo ""
+                echo "範例："
+                echo "  ta -n vibe          # 會匹配 'ai-vibeghostty'"
+                echo "  ta -n work          # 會匹配所有包含 'work' 的 sessions"
                 echo ""
                 list_sessions
                 return 1
             fi
+
+            # 有匹配，使用互動式選擇
+            local selected_session=$(select_session_interactive "$matches" "$input_name")
+            local select_result=$?
+
+            if [[ $select_result -ne 0 ]] || [[ -z "$selected_session" ]]; then
+                echo ""
+                print_info "已取消"
+                return 1
+            fi
+
+            echo ""
+            print_success "模糊匹配成功：'$input_name' → '$selected_session'"
+            attach_to_session "$selected_session"
             return 0
             ;;
         "")

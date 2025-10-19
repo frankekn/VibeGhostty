@@ -41,8 +41,9 @@ teardown() {
     # 輸入 q 退出
     run bash -c 'echo "q" | tmux-launch'
 
-    # 應該正常退出
-    assert_output_contains "選擇"
+    # 應該正常退出並顯示選單
+    assert_output_contains "Select"
+    assert_output_contains "Goodbye"
 }
 
 # ───────────────────────────────────────────────────────
