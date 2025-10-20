@@ -198,7 +198,7 @@ tmux-launch
 └─────────────────────────┴─────────────┘
 ```
 
-**AI Compare (50/50)** – direct comparison between two AI tools with a shared monitor pane.
+**AI Split (50/50)** – direct comparison between two AI tools with a shared monitor pane.
 
 ```
 ┌────────────────┬────────────────┐

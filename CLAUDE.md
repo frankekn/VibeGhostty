@@ -29,7 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    ├── 配置文件 (tmux.conf) - Tokyo Night Storm 主題
    ├── 布局系統 (layouts/*.sh)
    │   ├── ai-workspace.sh - 70/30 主工作布局
-   │   ├── ai-compare.sh - 50/50 並排比較
+   │   ├── ai-split.sh - 50/50 並排比較
    │   └── full-focus.sh - 全屏專注模式
    └── 工具集 (bin/)
        ├── tmux-launch - 互動式布局選擇器
@@ -88,7 +88,7 @@ tmux-launch
 
 # 直接啟動特定布局
 ~/.tmux-layouts/ai-workspace.sh    # AI 工作空間（70/30）
-~/.tmux-layouts/ai-compare.sh      # AI 比較模式（50/50）
+~/.tmux-layouts/ai-split.sh      # AI 比較模式（50/50）
 ~/.tmux-layouts/full-focus.sh      # 全屏專注模式
 
 # 重新載入 Tmux 配置
@@ -105,7 +105,7 @@ tmux kill-session -t NAME  # 刪除 session
 ```bash
 # 測試布局腳本語法
 bash -n ~/.tmux-layouts/ai-workspace.sh
-bash -n ~/.tmux-layouts/ai-compare.sh
+bash -n ~/.tmux-layouts/ai-split.sh
 bash -n ~/.tmux-layouts/full-focus.sh
 
 # 測試 bin 工具語法
@@ -162,7 +162,7 @@ Cmd+Shift+,    → 重新載入配置（與 macOS 偏好設定一致）
 │                         │  Monitor    │
 └─────────────────────────┴─────────────┘
 
-# ai-compare.sh - 並排比較模式
+# ai-split.sh - 並排比較模式
 ┌────────────────┬────────────────┐
 │  Codex CLI     │  Claude Code   │
 │  (50%)         │  (50%)         │
@@ -520,7 +520,7 @@ Cmd+D → 右側執行 codex
 並排比較輸出
 
 # Tmux 模式
-tmux-launch → 選擇 AI Compare
+tmux-launch → 選擇 AI Split
 左側 50%: Codex 建議
 右側 50%: Claude 建議
 底部 25%: 實際測試結果

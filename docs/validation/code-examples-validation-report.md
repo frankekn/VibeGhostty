@@ -144,7 +144,7 @@ tmux-launch
 
 # ✅ 直接啟動布局正確
 ~/.tmux-layouts/ai-workspace.sh
-~/.tmux-layouts/ai-compare.sh
+~/.tmux-layouts/ai-split.sh
 ~/.tmux-layouts/full-focus.sh
 ```
 
@@ -258,10 +258,10 @@ claude
 npm test -- --watch
 ```
 
-**AI Compare 模式** (第 254-260 行):
+**AI Split 模式** (第 254-260 行):
 ```bash
 # ✅ 布局啟動正確
-~/.tmux-layouts/ai-compare.sh
+~/.tmux-layouts/ai-split.sh
 ```
 
 **Full Focus 模式** (第 342-394 行):
@@ -762,7 +762,7 @@ cp config ~/Library/Application Support/com.mitchellh.ghostty/config
 ╚═══════════════════════════════════════════════════════════╝
 
   1 │ AI Workspace (主要工作模式)
-  2 │ AI Compare (比較模式)
+  2 │ AI Split (比較模式)
   q │ Exit (離開)
 ```
 **判斷**: 這是 UI 示意，不是程式碼。✅ 合理設計選擇

@@ -52,12 +52,12 @@ teardown() {
 
 @test "tmux-launch can access layout scripts" {
     assert_file_exists "$PROJECT_ROOT/tmux/layouts/ai-workspace.sh"
-    assert_file_exists "$PROJECT_ROOT/tmux/layouts/ai-compare.sh"
+    assert_file_exists "$PROJECT_ROOT/tmux/layouts/ai-split.sh"
     assert_file_exists "$PROJECT_ROOT/tmux/layouts/full-focus.sh"
 }
 
 @test "layout scripts are executable" {
     [ -x "$PROJECT_ROOT/tmux/layouts/ai-workspace.sh" ]
-    [ -x "$PROJECT_ROOT/tmux/layouts/ai-compare.sh" ]
+    [ -x "$PROJECT_ROOT/tmux/layouts/ai-split.sh" ]
     [ -x "$PROJECT_ROOT/tmux/layouts/full-focus.sh" ]
 }

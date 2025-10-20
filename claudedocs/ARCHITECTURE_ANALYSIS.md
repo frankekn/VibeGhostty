@@ -61,7 +61,7 @@ VibeGhostty 不屬於傳統的 MVC、微服務或單體應用架構，而是一�
                     ▼
 ┌──────────────────────────────────────────────┐
 │          業務邏輯層 (Business Logic)          │
-│  - 布局腳本 (ai-workspace, ai-compare, etc)  │
+│  - 布局腳本 (ai-workspace, ai-split, etc)  │
 │  - 安裝腳本 (install.sh)                      │
 │  - Session 管理邏輯                           │
 └──────────────────────────────────────────────┘
@@ -113,7 +113,7 @@ VibeGhostty 不屬於傳統的 MVC、微服務或單體應用架構，而是一�
 │     │ ╔═══════════════════════════════╗ │   │
 │     │ ║  選擇工作空間布局：           ║ │   │
 │     │ ║  1 │ AI Workspace            ║ │   │
-│     │ ║  2 │ AI Compare              ║ │   │
+│     │ ║  2 │ AI Split              ║ │   │
 │     │ ║  3 │ Full Focus              ║ │   │
 │     │ ╚═══════════════════════════════╝ │   │
 │     └───────────────────────────────────┘   │
@@ -290,7 +290,7 @@ tmux-launch [project_dir]
 
 # API Endpoint 2: 直接啟動布局
 ~/.tmux-layouts/ai-workspace.sh [project_dir]
-~/.tmux-layouts/ai-compare.sh [project_dir]
+~/.tmux-layouts/ai-split.sh [project_dir]
 ~/.tmux-layouts/full-focus.sh [project_dir] [ai_tool]
 
 # API Endpoint 3: 安裝程序
@@ -431,7 +431,7 @@ set -g @plugin-option Value    # 插件選項
 
 ~/.tmux-layouts/           # 布局腳本
 ├── ai-workspace.sh
-├── ai-compare.sh
+├── ai-split.sh
 └── full-focus.sh
 
 ~/.local/bin/
@@ -466,7 +466,7 @@ palette = index=#color   # 索引值
 
 #### 6.1.1 Template Method Pattern (模板方法模式)
 
-**應用位置**: 布局腳本 (`ai-workspace.sh`, `ai-compare.sh`, `full-focus.sh`)
+**應用位置**: 布局腳本 (`ai-workspace.sh`, `ai-split.sh`, `full-focus.sh`)
 
 ```bash
 # 模板方法結構
@@ -477,14 +477,14 @@ launch_ai_tools()           # 步驟 4 (子類別實作差異)
 attach_to_session()         # 步驟 5
 ```
 
-**範例** (`ai-workspace.sh` vs `ai-compare.sh`):
+**範例** (`ai-workspace.sh` vs `ai-split.sh`):
 
 ```bash
 # ai-workspace.sh (70/30 布局)
 tmux split-window -h -p 30   # 右側 30%
 tmux split-window -v -p 50   # 下方再分割
 
-# ai-compare.sh (50/50 布局)
+# ai-split.sh (50/50 布局)
 tmux split-window -h -p 50   # 右側 50%
 tmux split-window -v -p 25   # 下方 25%
 ```
@@ -503,7 +503,7 @@ launch_layout() {
 # 策略選擇
 case $choice in
     1) launch_layout "ai-workspace" ;;  # 策略 A
-    2) launch_layout "ai-compare" ;;    # 策略 B
+    2) launch_layout "ai-split" ;;    # 策略 B
     3) launch_layout "full-focus" ;;    # 策略 C
 esac
 ```
@@ -1515,7 +1515,7 @@ vibeghost ui
 │   ├── install.sh                  # 安裝腳本 (250 行)
 │   ├── layouts/
 │   │   ├── ai-workspace.sh         # 工作區布局 (151 行)
-│   │   ├── ai-compare.sh           # 比較布局 (122 行)
+│   │   ├── ai-split.sh           # 比較布局 (122 行)
 │   │   └── full-focus.sh           # 專注布局 (120 行)
 │   └── bin/
 │       └── tmux-launch             # 互動啟動器 (223 行)

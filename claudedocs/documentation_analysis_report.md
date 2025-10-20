@@ -715,7 +715,7 @@ ls ~/Library/Fonts/ | grep -i jetbrains
 # README.md - 僅列表
 VibeGhostty 提供三種預設布局：
 - AI Workspace (70/30)
-- AI Compare (50/50)
+- AI Split (50/50)
 - Full Focus (100%)
 
 詳見 [Tmux 快速開始](QUICKSTART_TMUX.md#布局)
@@ -812,7 +812,7 @@ tmux-launch
 
 ## 三種布局詳解
 - AI Workspace 使用場景
-- AI Compare 使用場景
+- AI Split 使用場景
 - Full Focus 使用場景
 
 ## 常用快捷鍵（20 個）

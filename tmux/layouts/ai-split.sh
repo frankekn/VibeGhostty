@@ -135,7 +135,7 @@ fi
 # Create new session
 # ───────────────────────────────────────────────────────
 
-echo "🚀 建立 AI Compare session: $SESSION_NAME"
+echo "🚀 建立 AI Split session: $SESSION_NAME"
 echo "📁 專案目錄: $PROJECT_DIR"
 
 tmux new-session -d -s "$SESSION_NAME" -c "$PROJECT_DIR"

@@ -140,7 +140,7 @@ show_environment() {
     echo "  │ VIBE_AI_SECONDARY  │ claude     │ 輔助 AI 工具（30%）  │"
     echo "  └────────────────────┴────────────┴──────────────────────┘"
     echo ""
-    echo -e "  ${GREEN}AI Compare 布局（ai-compare.sh）${RESET}"
+    echo -e "  ${GREEN}AI Split 布局（ai-split.sh）${RESET}"
     echo "  ┌────────────────────┬────────────┬──────────────────────┐"
     echo "  │ 變數名稱           │ 預設值     │ 說明                 │"
     echo "  ├────────────────────┼────────────┼──────────────────────┤"
@@ -199,7 +199,7 @@ show_layouts() {
     echo ""
     printf "  %-25s %s\n" "tmux-launch" "互動式選單（推薦）"
     printf "  %-25s %s\n" "ai-workspace.sh" "AI 工作空間（70/30 布局）"
-    printf "  %-25s %s\n" "ai-compare.sh" "AI 比較模式（50/50 並排）"
+    printf "  %-25s %s\n" "ai-split.sh" "AI 分割模式（50/50 並排）"
     printf "  %-25s %s\n" "full-focus.sh" "全屏專注模式"
     echo ""
 }

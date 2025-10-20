@@ -59,7 +59,7 @@ tmux-launch
 選擇工作空間布局：
 
   1 │ AI Workspace (主要工作模式)
-  2 │ AI Compare (比較模式)
+  2 │ AI Split (比較模式)
   3 │ Full Focus (專注模式)
   4 │ Resume (恢復上次 session)
   q │ Exit (離開)
@@ -191,7 +191,7 @@ tmux-launch → 選 1
 
 ---
 
-### 布局 2：AI Compare（比較模式）
+### 布局 2：AI Split（比較模式）
 
 **何時使用：**
 - 比較兩個 AI 的解決方案
@@ -206,7 +206,7 @@ tmux-launch → 選 1
 ```bash
 tmux-launch → 選 2
 # 或
-~/.tmux-layouts/ai-compare.sh
+~/.tmux-layouts/ai-split.sh
 ```
 
 **使用範例：**
@@ -445,7 +445,7 @@ cat ~/Documents/GitHub/VibeGhostty/TMUX_GUIDE.md
    - 嘗試 zoom 功能
 
 2. **第 2 天**：嘗試其他布局
-   - 試用 AI Compare 模式
+   - 試用 AI Split 模式
    - 體驗 Full Focus 專注模式
 
 3. **第 3 天**：學習進階功能

@@ -176,7 +176,7 @@ tmux-launch
 
 ---
 
-### 2. AI Compare（比較模式）
+### 2. AI Split（比較模式）
 
 **適用場景：**
 - 比較兩個 AI 的解決方案
@@ -203,7 +203,7 @@ tmux-launch
 
 **啟動方式：**
 ```bash
-~/.tmux-layouts/ai-compare.sh
+~/.tmux-layouts/ai-split.sh
 ```
 
 **使用場景範例：**
@@ -822,7 +822,7 @@ Ctrl+Space 3 → git diff
 
 **比較學習法：**
 ```bash
-~/.tmux-layouts/ai-compare.sh ~/learning
+~/.tmux-layouts/ai-split.sh ~/learning
 ```
 
 同時問兩個 AI 相同的學習問題，比較：
