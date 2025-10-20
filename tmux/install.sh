@@ -212,7 +212,7 @@ if [[ -d "$HOME/.tmux-layouts" ]]; then
 fi
 
 # Backup bin tools
-for tool in tmux-launch vibe-help ta; do
+for tool in tmux-launch vibe-help ta vibe-start; do
     if [[ -f "$HOME/.local/bin/$tool" ]]; then
         mkdir -p "$BACKUP_DIR/bin"
         cp "$HOME/.local/bin/$tool" "$BACKUP_DIR/bin/"
@@ -250,6 +250,10 @@ print_success "Copied vibe-help"
 cp "$SCRIPT_DIR/bin/ta" "$HOME/.local/bin/ta"
 print_success "Copied ta helper"
 
+# Copy vibe-start
+cp "$SCRIPT_DIR/bin/vibe-start" "$HOME/.local/bin/vibe-start"
+print_success "Copied vibe-start"
+
 echo ""
 
 # Step 7: Set executable permissions
@@ -259,6 +263,7 @@ chmod +x "$HOME/.tmux-layouts/"*.sh
 chmod +x "$HOME/.local/bin/tmux-launch"
 chmod +x "$HOME/.local/bin/vibe-help"
 chmod +x "$HOME/.local/bin/ta"
+chmod +x "$HOME/.local/bin/vibe-start"
 
 print_success "Permissions updated"
 
@@ -300,6 +305,7 @@ bash -n "$HOME/.tmux-layouts/ai-split.sh" && print_success "ai-split.sh passed s
 bash -n "$HOME/.tmux-layouts/full-focus.sh" && print_success "full-focus.sh passed syntax check"
 bash -n "$HOME/.tmux-layouts/lib/layout-common.sh" && print_success "layout-common.sh passed syntax check"
 bash -n "$HOME/.local/bin/tmux-launch" && print_success "tmux-launch passed syntax check"
+bash -n "$HOME/.local/bin/vibe-start" && print_success "vibe-start passed syntax check"
 
 echo ""
 

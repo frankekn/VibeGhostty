@@ -13,7 +13,7 @@ VibeGhostty delivers a ready-to-use Ghostty and Tmux setup crafted for pairing t
 - ⌨️ **Productive keybindings** for tabs, splits, and window management
 - 🤖 **AI-friendly layouts** that keep assistants and monitors in view
 - 📊 **Large scrollback buffers** so conversations stay at your fingertips
-- 🚀 **Intelligent project startup** (vibe-start) - zero-config workspace creation *(Coming in v1.0)*
+- 🚀 **Intelligent project startup** (`vibe-start`) - zero-config workspace creation
 
 ---
 
@@ -153,37 +153,36 @@ bash install.sh
 # Option 2: one-liner installer (macOS/Linux)
 bash <(curl -fsSL https://raw.githubusercontent.com/frankekn/VibeGhostty/master/tmux/install.sh)
 
-# Launch the interactive workspace picker
+# Launch the interactive workspace picker (manual start)
 tmux-launch
 
-# Start a workspace (auto-detect project) - COMING SOON in v1.0
-# vibe-start
-
-# Zero-configuration startup - auto-detects Next.js, Node.js, Python projects
-# Automatically generates AI workspace (70/30 split) based on project type
-# See DESIGN.md for detailed MVP roadmap
+# Or jump straight into an auto-configured session
+vibe-start
 ```
 
-### vibe-start: Intelligent Project Startup *(In Development)*
+`tmux-launch` 只建立 panes，命令仍由你決定何時執行；`vibe-start` 則會偵測專案並自動在各 pane 注入建議命令。
 
-`vibe-start` is an upcoming feature that eliminates manual setup by automatically detecting your project type and launching the appropriate AI workspace.
+### vibe-start: Intelligent Project Startup
 
-**Key Features** (v1.0 MVP):
-- 🔍 **Smart Detection**: Automatically identifies Next.js, Node.js, and Python projects
-- ⚡ **Zero Configuration**: Uses environment variables—no config files needed
-- 🎯 **Single Command**: `vibe-start` and you're ready to code
-- 🚦 **Port Checking**: Automatically handles port conflicts (3000, 5432)
-- 👁️ **Interactive Preview**: Shows what will be launched before execution
+`vibe-start` removes the “open tmux → rearrange panes → start tools” grind. It detects your project, launches the right layout, and injects commands into each pane—while still letting you override everything with flags or environment variables.
 
-**Current Status**: Design complete, implementation scheduled for Week 1-2
-- 📖 Full design: [DESIGN.md](DESIGN.md)
-- 📊 MVP analysis: [docs/MVP_ANALYSIS.md](docs/MVP_ANALYSIS.md)
-- 🔍 Complexity analysis: [docs/COMPLEXITY_ANALYSIS.md](docs/COMPLEXITY_ANALYSIS.md)
+**What's available in v0.1.0**
+- 🔍 **Smart detection** for Next.js, generic Node.js, and Python repos
+- ⚙️ **Command heuristics** (`npm run dev`, `pytest`, AI CLIs) that run automatically in their panes
+- 👁️ **Preview & dry-run**: review the plan before anything executes
+- ♻️ **Session recreation**: existing sessions are replaced without interactive prompts
+- 🧪 **Mode presets**: `--mode debug` / `--mode review` switch to the AI Split layout for side-by-side agents
 
-**Roadmap**:
-- **v1.0 MVP** (2 weeks): Zero-config startup, project detection, single layout
-- **v1.1** (1 week later): Memory system, `.vibeproject` config, multi-mode support
-- **v2.0** (future): Custom templates, hooks, advanced features
+Usage examples:
+
+```bash
+vibe-start                   # detect + preview + launch
+vibe-start --dry-run         # print plan only
+vibe-start --mode review --yes
+vibe-start --project ../api  # launch for another directory
+```
+
+Need more control? Override defaults with environment variables (`VIBE_AI_PRIMARY`, `VIBE_AI_LEFT`, `VIBE_CMD_*`) or pass `--layout` / `--type` / `--mode` to steer the workflow.
 
 ### Default layouts
 

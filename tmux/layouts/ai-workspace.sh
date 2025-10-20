@@ -119,7 +119,12 @@ tmux send-keys -t "$SESSION_NAME:1.3" "echo ''" C-m
 
 tmux select-pane -t "${SESSION_NAME}:1.1"
 
-echo "✅ Session 建立完成！正在連接..."
-sleep 1
+echo "✅ Session 建立完成！"
 
+if [[ "${VIBE_SKIP_ATTACH:-0}" == "1" ]]; then
+    echo "ℹ️ 已建立 session：$SESSION_NAME（跳過自動 attach）"
+    exit 0
+fi
+
+sleep 1
 tmux attach-session -t "$SESSION_NAME"

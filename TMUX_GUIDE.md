@@ -95,8 +95,8 @@ Server (tmux 主程序)
    - 輸入專案目錄或按 Enter 使用當前目錄
 
 4. **開始使用**
-   - 左側 Codex CLI 自動啟動
-   - 右上 Claude Code 自動啟動
+  - 左側 Codex pane（手動啟動或由 vibe-start 自動注入）
+  - 右上 Claude pane（手動啟動或由 vibe-start 自動注入）
    - 右下 Monitor pane 顯示使用提示
 
 ### 日常使用流程
@@ -155,6 +155,8 @@ tmux-launch
 ~/.tmux-layouts/ai-workspace.sh ~/my-project
 ```
 
+> 換好布局後，pane 會保留空白，請在各 pane 手動輸入 `codex`、`claude` 或測試指令。若想自動注入命令，可直接使用 `vibe-start`。
+
 **快速跳轉：**
 - `Ctrl+Space 1` → Codex CLI
 - `Ctrl+Space 2` → Claude Code
@@ -205,6 +207,8 @@ tmux-launch
 ```bash
 ~/.tmux-layouts/ai-split.sh
 ```
+
+> Pane 預留給左右兩個 AI 工具，由使用者自行啟動。若需自動將命令輸入 panes，可使用 `vibe-start --mode debug` 或 `--mode review`。
 
 **使用場景範例：**
 
@@ -329,9 +333,9 @@ Ctrl+Space -    # 水平分割
 
 | 快捷鍵 | 功能 | 說明 |
 |--------|------|------|
-| `Ctrl+Space 1` | 跳到 Pane 0 | Codex CLI（左側） |
-| `Ctrl+Space 2` | 跳到 Pane 1 | Claude Code（右上） |
-| `Ctrl+Space 3` | 跳到 Pane 2 | Monitor（右下） |
+| `Ctrl+Space 1` | 跳到 Pane 0 | Codex pane（手動或 vibe-start） |
+| `Ctrl+Space 2` | 跳到 Pane 1 | Claude pane（手動或 vibe-start） |
+| `Ctrl+Space 3` | 跳到 Pane 2 | Monitor / 測試 |
 | `Ctrl+Space 4` | 跳到 Pane 3 | 如果有第 4 個 pane |
 | `Ctrl+Space 5` | 跳到 Pane 4 | 如果有第 5 個 pane |
 
@@ -582,31 +586,21 @@ Ctrl+Space : kill-session
 ### Q6: AI CLI 沒有自動啟動？
 
 **A:**
-檢查項目：
-
-1. **CLI 是否安裝？**
-   ```bash
-   which codex
-   which claude
-   ```
-
-2. **PATH 設定正確嗎？**
-   ```bash
-   echo $PATH
-   ```
-
-3. **手動啟動測試：**
-   ```bash
-   codex
-   claude
-   ```
-
-如果手動可以啟動，但腳本不行，可能是 shell 初始化問題：
+預設布局腳本只建立 panes，不會自動啟動任何 AI CLI。這樣可以避免登入流程或多帳號造成衝突。請切換到對應 pane 後，手動輸入：
 
 ```bash
-# 編輯 ~/.tmux.conf，加入：
-set -g default-command "${SHELL}"
+codex     # 左側 pane
+claude    # 右側 pane
 ```
+
+想要自動注入指令？使用 `vibe-start`：
+
+```bash
+vibe-start --yes          # 偵測專案並自動啟動
+vibe-start --mode debug   # 左右兩側 AI + 底部比對 pane
+```
+
+`vibe-start` 會在啟動前顯示預覽，並確保命令與 pane 對齊。
 
 ### Q7: 顏色看起來不對？
 

@@ -96,7 +96,11 @@ vg_show_manual_launch "$SESSION_NAME" "1.1" "$AI_NAME" "$AI_COMMAND" "$AI_AVAILA
 # ───────────────────────────────────────────────────────
 
 echo "✅ Focus session 建立完成！"
+
+if [[ "${VIBE_SKIP_ATTACH:-0}" == "1" ]]; then
+    echo "ℹ️ 已建立 session：$SESSION_NAME（跳過自動 attach）"
+    exit 0
+fi
+
 sleep 1
-
 tmux attach-session -t "$SESSION_NAME"
-

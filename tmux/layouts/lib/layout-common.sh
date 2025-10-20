@@ -1,10 +1,26 @@
 #!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════
 # Shared helpers for VibeGhostty tmux layout scripts
-# 把共用邏輯集中管理，避免每個腳本重複維護
+# 集中共用邏輯，避免重複維護
 # ═══════════════════════════════════════════════════════
 
 set -eo pipefail
+
+# ───────────────────────────────────────────────────────
+# Environment helpers
+# ───────────────────────────────────────────────────────
+
+vg_is_non_interactive() {
+    [[ "${VIBE_NON_INTERACTIVE:-0}" == "1" ]]
+}
+
+vg_should_force_recreate() {
+    [[ "${VIBE_FORCE_RECREATE:-0}" == "1" ]]
+}
+
+vg_auto_confirm_default() {
+    [[ "${VIBE_ASSUME_YES:-0}" == "1" ]]
+}
 
 # 解析專案目錄，確保存在並回傳絕對路徑
 vg_resolve_project_dir() {
@@ -95,11 +111,23 @@ vg_handle_existing_session() {
         return
     fi
 
+    if vg_should_force_recreate; then
+        echo "♻️  重新建立 session：$session_name"
+        tmux kill-session -t "$session_name"
+        return
+    fi
+
+    if vg_is_non_interactive; then
+        echo "🔗 使用現有 session：$session_name"
+        tmux attach-session -t "$session_name"
+        exit 0
+    fi
+
     echo "📌 Session '$session_name' 已存在"
     echo "選擇操作："
-    echo "  1. 連接到現有 session (attach)"
-    echo "  2. 刪除並重新建立 (recreate)"
-    echo "  3. 取消 (cancel)"
+    echo "  1. 連接現有 session (attach)"
+    echo "  2. 重新建立 (recreate)"
+    echo "  3. 取消"
     read -p "請選擇 [1/2/3]: " choice
 
     case $choice in
@@ -109,7 +137,7 @@ vg_handle_existing_session() {
             exit 0
             ;;
         2)
-            echo "🗑️  刪除現有 session..."
+            echo "♻️  刪除並重新建立 session..."
             tmux kill-session -t "$session_name"
             ;;
         3|*)
@@ -123,6 +151,10 @@ vg_handle_existing_session() {
 vg_confirm_continue() {
     local prompt_message="$1"
     local default_choice=${2:-Y}
+
+    if vg_auto_confirm_default; then
+        return 0
+    fi
 
     local prompt_suffix="[Y/n]"
     if [[ "$default_choice" =~ ^[Nn]$ ]]; then
@@ -153,7 +185,9 @@ vg_show_manual_launch() {
 
     if [[ "$available_flag" == true ]]; then
         tmux send-keys -t "${session_name}:${pane_id}" \
-            "echo '💡 請在此 pane 手動啟動 ${display_name}（輸入：${command_name}）'" C-m
+            "echo '💡 請在此 pane 手動執行：${command_name}'" C-m
+        tmux send-keys -t "${session_name}:${pane_id}" \
+            "echo '   （範例：輸入上述指令後按 Enter）'" C-m
     else
         tmux send-keys -t "${session_name}:${pane_id}" \
             "echo '⚠️  ${command_name} 未安裝，請先安裝後再執行'" C-m
