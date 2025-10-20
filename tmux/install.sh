@@ -204,14 +204,12 @@ if [[ -f "$HOME/.tmux.conf" ]]; then
     print_warning "Backed up: .tmux.conf"
 fi
 
-# Backup layout scripts
-for script in ai-workspace.sh ai-split.sh full-focus.sh; do
-    if [[ -f "$HOME/.tmux-layouts/$script" ]]; then
-        cp "$HOME/.tmux-layouts/$script" "$BACKUP_DIR/"
-        ((BACKUP_COUNT++))
-        print_warning "Backed up: .tmux-layouts/$script"
-    fi
-done
+# Backup layout目錄
+if [[ -d "$HOME/.tmux-layouts" ]]; then
+    cp -R "$HOME/.tmux-layouts" "$BACKUP_DIR/tmux-layouts"
+    ((BACKUP_COUNT++))
+    print_warning "Backed up: .tmux-layouts/"
+fi
 
 # Backup bin tools
 for tool in tmux-launch vibe-help ta; do
@@ -236,9 +234,9 @@ echo ""
 cp "$SCRIPT_DIR/tmux.conf" "$HOME/.tmux.conf"
 print_success "Copied tmux.conf"
 
-# Copy layout scripts
-cp "$SCRIPT_DIR/layouts/"*.sh "$HOME/.tmux-layouts/"
-print_success "Copied layout scripts"
+# Copy layout scripts & shared libs
+cp -R "$SCRIPT_DIR/layouts/." "$HOME/.tmux-layouts/"
+print_success "Copied layout assets"
 
 # Copy launcher
 cp "$SCRIPT_DIR/bin/tmux-launch" "$HOME/.local/bin/tmux-launch"
@@ -300,6 +298,7 @@ print_step "Linting shell scripts..."
 bash -n "$HOME/.tmux-layouts/ai-workspace.sh" && print_success "ai-workspace.sh passed syntax check"
 bash -n "$HOME/.tmux-layouts/ai-split.sh" && print_success "ai-split.sh passed syntax check"
 bash -n "$HOME/.tmux-layouts/full-focus.sh" && print_success "full-focus.sh passed syntax check"
+bash -n "$HOME/.tmux-layouts/lib/layout-common.sh" && print_success "layout-common.sh passed syntax check"
 bash -n "$HOME/.local/bin/tmux-launch" && print_success "tmux-launch passed syntax check"
 
 echo ""

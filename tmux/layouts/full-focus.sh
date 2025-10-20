@@ -3,49 +3,20 @@
 # Full Focus Layout for Tmux
 # Created for Frank Yang - VibeGhostty Project
 # ═══════════════════════════════════════════════════════
-#
-# Layout Design:
-# ┌─────────────────────────────────┐
-# │  Codex CLI (100%)               │
-# │                                 │
-# │  專注模式 - 全屏工作            │
-# │                                 │
-# └─────────────────────────────────┘
-#
-# Usage:
-#   ./full-focus.sh [project_dir] [ai_choice]
-#
-# Arguments:
-#   project_dir - 專案目錄（選填，預設為當前目錄）
-#   ai_choice   - AI 選擇：codex 或 claude（選填，預設 codex）
-#
-# Examples:
-#   ./full-focus.sh
-#   ./full-focus.sh ~/my-project
-#   ./full-focus.sh ~/my-project claude
-#
-# ═══════════════════════════════════════════════════════
 
-set -e
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/lib/layout-common.sh"
 
 # ───────────────────────────────────────────────────────
 # Configuration
 # ───────────────────────────────────────────────────────
 
-SESSION_NAME="ai-focus"
-PROJECT_DIR="${1:-$PWD}"
-
-# AI 工具配置（支援環境變數自訂，參數優先於環境變數）
+PROJECT_DIR="$(vg_resolve_project_dir "${1:-}")"
 DEFAULT_AI="${VIBE_AI_FOCUS:-codex}"
 AI_CHOICE="${2:-$DEFAULT_AI}"
 
-# 確保專案目錄存在
-if [[ ! -d "$PROJECT_DIR" ]]; then
-    echo "❌ 錯誤：專案目錄不存在 '$PROJECT_DIR'"
-    exit 1
-fi
-
-# 驗證 AI 選擇
 if [[ "$AI_CHOICE" != "codex" && "$AI_CHOICE" != "claude" ]]; then
     echo "❌ 錯誤：AI 選擇必須是 'codex' 或 'claude'"
     echo "   使用方法: $0 [project_dir] [codex|claude]"
@@ -53,12 +24,8 @@ if [[ "$AI_CHOICE" != "codex" && "$AI_CHOICE" != "claude" ]]; then
     exit 1
 fi
 
-if [[ -d "$PROJECT_DIR/.git" ]]; then
-    REPO_NAME=$(basename "$PROJECT_DIR")
-    SESSION_NAME="focus-${REPO_NAME}"
-fi
+SESSION_NAME="$(vg_session_name "ai-focus" "$PROJECT_DIR" "focus")"
 
-# 設定 AI 相關資訊
 if [[ "$AI_CHOICE" == "codex" ]]; then
     AI_EMOJI="🔧"
     AI_NAME="Codex CLI"
@@ -70,76 +37,33 @@ else
 fi
 
 # ───────────────────────────────────────────────────────
-# Check Tools
+# Check Tool
 # ───────────────────────────────────────────────────────
 
-check_tool() {
-    local tool="$1"
-    if ! command -v "$tool" &>/dev/null; then
-        echo "⚠️  警告：'$tool' 未安裝"
-        echo "   安裝方法："
-        case "$tool" in
-            codex)
-                echo "     npm install -g @codexhq/cli"
-                ;;
-            claude)
-                echo "     從 https://claude.com/code 下載"
-                ;;
-            *)
-                echo "     請查閱工具文檔"
-                ;;
-        esac
-        return 1
-    fi
-    return 0
-}
-
-# 檢查選擇的 AI 工具是否可用
 echo ""
-AI_AVAILABLE=false
 
-if check_tool "$AI_COMMAND"; then
+AI_AVAILABLE=false
+if vg_check_tool "$AI_COMMAND"; then
     AI_AVAILABLE=true
 fi
 
 echo ""
 
-# 如果工具不存在，詢問是否繼續
 if [[ "$AI_AVAILABLE" == false ]]; then
     echo "❌ 錯誤：選擇的 AI 工具 '$AI_COMMAND' 未安裝"
     echo "   請先安裝後再執行"
     echo ""
-    echo "是否仍要建立 session（僅建立空 shell）？ [y/N]: "
-    read -r confirm
-    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
-        echo "❌ 已取消"
-        exit 0
-    fi
+    vg_confirm_continue "是否仍要建立 session（僅建立空 shell）？" "N"
     echo ""
     echo "⚠️  將建立僅包含 shell 的 session"
+    echo ""
 fi
 
-echo ""
-
 # ───────────────────────────────────────────────────────
-# Check existing session
+# Existing session handling
 # ───────────────────────────────────────────────────────
 
-if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
-    echo "📌 Session '$SESSION_NAME' 已存在"
-    read -p "連接到現有 session? [Y/n]: " choice
-    case $choice in
-        n|N)
-            echo "🗑️  刪除並重新建立..."
-            tmux kill-session -t "$SESSION_NAME"
-            ;;
-        *)
-            echo "🔗 連接中..."
-            tmux attach-session -t "$SESSION_NAME"
-            exit 0
-            ;;
-    esac
-fi
+vg_handle_existing_session "$SESSION_NAME"
 
 # ───────────────────────────────────────────────────────
 # Create new session
@@ -165,13 +89,7 @@ tmux new-session -d -s "$SESSION_NAME" -c "$PROJECT_DIR"
 
 tmux select-pane -t "${SESSION_NAME}:1.1" -T "$AI_EMOJI $AI_NAME (Focus Mode)"
 
-# 啟動選擇的 AI（或顯示錯誤訊息）
-if [[ "$AI_AVAILABLE" == true ]]; then
-    tmux send-keys -t "${SESSION_NAME}:1.1" "$AI_COMMAND" C-m
-else
-    tmux send-keys -t "${SESSION_NAME}:1.1" "echo '⚠️  $AI_COMMAND 未安裝，請先安裝後再執行'" C-m
-    tmux send-keys -t "${SESSION_NAME}:1.1" "echo '   安裝方法請參考上方提示'" C-m
-fi
+vg_show_manual_launch "$SESSION_NAME" "1.1" "$AI_NAME" "$AI_COMMAND" "$AI_AVAILABLE"
 
 # ───────────────────────────────────────────────────────
 # Final Setup
@@ -181,3 +99,4 @@ echo "✅ Focus session 建立完成！"
 sleep 1
 
 tmux attach-session -t "$SESSION_NAME"
+

@@ -1174,32 +1174,28 @@ Ctrl+Space : kill-session
 
 ---
 
-### Q5: AI CLI 沒有自動啟動？
+### Q5: 為什麼腳本沒有自動啟動 AI CLI？
 
 **A:**
-檢查項目：
+2025-10 更新後，`ai-workspace.sh`、`ai-split.sh`、`full-focus.sh` 僅負責建立窗格與調整版面，不再自動執行 `codex`、`claude` 等 CLI。這樣做可以避免在窗格建立時同時發送指令造成干擾，並讓使用者自由決定要啟動哪個工具。
 
-1. **CLI 是否安裝？**
-   ```bash
-   which codex
-   which claude
-   ```
+建議流程：
 
-2. **PATH 設定正確嗎？**
-   ```bash
-   echo $PATH
-   ```
+1. 執行對應腳本建立 layout。
+2. 切換到想使用的窗格（如 `Ctrl+Space 1`）。
+3. **手動輸入** `codex`、`claude` 或其他指令啟動工具。
 
-3. **手動啟動測試：**
-   ```bash
-   codex
-   claude
-   ```
-
-如果手動可以啟動，但腳本不行，可能是 shell 初始化問題：
+若輸入指令後仍無法啟動，請依序確認：
 
 ```bash
-# 編輯 ~/.tmux.conf，加入：
+which codex
+which claude
+echo $PATH
+```
+
+若 CLI 安裝與 PATH 都正常，仍遇到 shell 初始化問題，可在 `~/.tmux.conf` 加入：
+
+```bash
 set -g default-command "${SHELL}"
 ```
 

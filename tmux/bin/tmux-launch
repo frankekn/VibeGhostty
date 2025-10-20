@@ -126,6 +126,7 @@ list_layouts() {
 verify_layout_script() {
     local layout=$1
     local script="$LAYOUTS_DIR/${layout}.sh"
+    local shared_lib="$LAYOUTS_DIR/lib/layout-common.sh"
 
     # 檢查腳本是否存在
     if [[ ! -f "$script" ]]; then
@@ -149,6 +150,13 @@ verify_layout_script() {
             echo -e "   ${BOLD}chmod +x $script${RESET}"
             return 1
         fi
+    fi
+
+    if [[ ! -f "$shared_lib" ]]; then
+        echo -e "${RED}❌ 錯誤: 缺少共用模組${RESET}"
+        echo -e "   路徑: ${DIM}$shared_lib${RESET}"
+        echo -e "${YELLOW}💡 解決方案:${RESET} 重新執行安裝腳本以同步最新架構"
+        return 1
     fi
 
     return 0
