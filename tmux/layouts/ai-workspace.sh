@@ -18,8 +18,8 @@ SESSION_NAME="$(vg_session_name "ai-work" "$PROJECT_DIR" "ai")"
 
 AI_PRIMARY="${VIBE_AI_PRIMARY:-codex}"
 AI_SECONDARY="${VIBE_AI_SECONDARY:-claude}"
-AI_PRIMARY_LABEL="${AI_PRIMARY^}"
-AI_SECONDARY_LABEL="${AI_SECONDARY^}"
+AI_PRIMARY_LABEL="$(vg_tool_label "$AI_PRIMARY")"
+AI_SECONDARY_LABEL="$(vg_tool_label "$AI_SECONDARY")"
 
 # ───────────────────────────────────────────────────────
 # Check Tools
@@ -123,4 +123,3 @@ echo "✅ Session 建立完成！正在連接..."
 sleep 1
 
 tmux attach-session -t "$SESSION_NAME"
-

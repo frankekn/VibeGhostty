@@ -4,13 +4,7 @@
 # 把共用邏輯集中管理，避免每個腳本重複維護
 # ═══════════════════════════════════════════════════════
 
-set -euo pipefail
-
-# 常用工具的安裝提示
-declare -A VG_INSTALL_HINTS=(
-    [codex]="npm install -g @codexhq/cli"
-    [claude]="從 https://claude.com/code 下載"
-)
+set -eo pipefail
 
 # 解析專案目錄，確保存在並回傳絕對路徑
 vg_resolve_project_dir() {
@@ -37,21 +31,57 @@ vg_session_name() {
     fi
 }
 
+# 取得工具安裝提示
+vg_install_hint() {
+    case "$1" in
+        codex)
+            echo "npm install -g @codexhq/cli"
+            return 0
+            ;;
+        claude)
+            echo "從 https://claude.com/code 下載"
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+# 取得工具顯示名稱（首字大寫）
+vg_tool_label() {
+    case "$1" in
+        codex)
+            echo "Codex"
+            ;;
+        claude)
+            echo "Claude"
+            ;;
+        *)
+            # 近似的首字母大寫
+            local raw="$1"
+            local first_char="${raw:0:1}"
+            local rest="${raw:1}"
+            printf "%s%s\n" "$(echo "$first_char" | tr '[:lower:]' '[:upper:]')" "$rest"
+            ;;
+    esac
+    return 0
+}
+
 # 檢查工具是否存在，不存在時顯示安裝提示
 vg_check_tool() {
     local tool="$1"
-
     if command -v "$tool" &>/dev/null; then
         return 0
     fi
 
     echo "⚠️  '$tool' 未安裝"
-    echo "   安裝方法："
-
-    if [[ -n "${VG_INSTALL_HINTS[$tool]:-}" ]]; then
-        echo "     ${VG_INSTALL_HINTS[$tool]}"
+    local hint
+    if hint=$(vg_install_hint "$tool"); then
+        echo "   安裝方法："
+        echo "     $hint"
     else
-        echo "     請查閱工具文檔"
+        echo "   安裝方法：請查閱工具文檔"
     fi
 
     return 1
@@ -127,9 +157,10 @@ vg_show_manual_launch() {
     else
         tmux send-keys -t "${session_name}:${pane_id}" \
             "echo '⚠️  ${command_name} 未安裝，請先安裝後再執行'" C-m
-        if [[ -n "${VG_INSTALL_HINTS[$command_name]:-}" ]]; then
+        local install_hint
+        if install_hint=$(vg_install_hint "$command_name"); then
             tmux send-keys -t "${session_name}:${pane_id}" \
-                "echo '   安裝方法：${VG_INSTALL_HINTS[$command_name]}'" C-m
+                "echo '   安裝方法：$install_hint'" C-m
         fi
     fi
 

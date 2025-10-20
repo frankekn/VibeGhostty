@@ -18,8 +18,8 @@ SESSION_NAME="$(vg_session_name "ai-split" "$PROJECT_DIR" "split")"
 
 AI_LEFT="${VIBE_AI_LEFT:-codex}"
 AI_RIGHT="${VIBE_AI_RIGHT:-claude}"
-AI_LEFT_LABEL="${AI_LEFT^}"
-AI_RIGHT_LABEL="${AI_RIGHT^}"
+AI_LEFT_LABEL="$(vg_tool_label "$AI_LEFT")"
+AI_RIGHT_LABEL="$(vg_tool_label "$AI_RIGHT")"
 
 # ───────────────────────────────────────────────────────
 # Check Tools
@@ -118,4 +118,3 @@ echo "✅ Compare session 建立完成！"
 sleep 1
 
 tmux attach-session -t "$SESSION_NAME"
-
