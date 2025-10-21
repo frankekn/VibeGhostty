@@ -46,7 +46,7 @@
 
 2. **AI 建議並排比較**
    - Ghostty Split 模式
-   - Tmux AI Compare 模式
+   - Tmux AI Split 模式
    - 2 個實際使用案例（演算法比較、API 設計）
 
 3. **深度專注模式**

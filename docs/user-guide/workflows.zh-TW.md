@@ -247,13 +247,13 @@ codex
 
 ---
 
-### 方法 B: Tmux AI Compare 模式
+### 方法 B: Tmux AI Split 模式
 
 **設定步驟**:
 
 ```bash
-# 啟動 AI Compare 布局
-~/.tmux-layouts/ai-compare.sh
+# 啟動 AI Split 布局
+~/.tmux-layouts/ai-split.sh
 ```
 
 **視覺布局**:
@@ -623,7 +623,7 @@ const add = (a, b) => {
 │
 ├─ 需要並排比較 AI 建議
 │  ├─ 暫時性比較 → Ghostty Splits（Cmd+D）
-│  └─ 需要持久化 → Tmux AI Compare
+│  └─ 需要持久化 → Tmux AI Split
 │
 ├─ 深度專注，單一 AI 工具
 │  └─ Tmux Full Focus

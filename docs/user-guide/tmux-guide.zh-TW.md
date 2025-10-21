@@ -90,7 +90,7 @@ tmux-launch
 選擇工作空間布局：
 
   1 │ AI Workspace (主要工作模式)
-  2 │ AI Compare (比較模式)
+  2 │ AI Split (比較模式)
   3 │ Full Focus (專注模式)
   4 │ Resume (恢復上次 session)
   q │ Exit (離開)
@@ -117,8 +117,8 @@ tmux-launch
 # AI Workspace 布局（70/30 分割）
 ~/.tmux-layouts/ai-workspace.sh
 
-# AI Compare 布局（50/50 分割）
-~/.tmux-layouts/ai-compare.sh
+# AI Split 布局（50/50 分割）
+~/.tmux-layouts/ai-split.sh
 
 # Full Focus 布局（100% 全屏）
 ~/.tmux-layouts/full-focus.sh
@@ -264,7 +264,7 @@ Session: vibeghostty-dev
 三種預設布局專為多 AI 協作設計：
 
 1. **AI Workspace (70/30)**：主力 AI（左側）+ 輔助 AI（右上）+ 監控（右下）
-2. **AI Compare (50/50)**：並排比較兩個 AI 的不同建議
+2. **AI Split (50/50)**：並排比較兩個 AI 的不同建議
 3. **Full Focus (100%)**：深度思考時只使用單一 AI
 
 ---
@@ -297,7 +297,7 @@ Ghostty Tab 3: 系統監控（純 Ghostty，不用 Tmux）
 ~/.tmux.conf          # 主配置
 ~/.tmux-layouts/      # 布局腳本
 │   ├── ai-workspace.sh
-│   ├── ai-compare.sh
+│   ├── ai-split.sh
 │   └── full-focus.sh
 ~/.local/bin/         # 工具命令
 │   ├── tmux-launch
@@ -424,7 +424,7 @@ tmux-launch
 
 ---
 
-#### AI Compare (50/50)
+#### AI Split (50/50)
 
 **適用場景**：
 - 比較兩個 AI 的解決方案
@@ -453,7 +453,7 @@ tmux-launch
 **啟動方式**：
 
 ```bash
-~/.tmux-layouts/ai-compare.sh
+~/.tmux-layouts/ai-split.sh
 ```
 
 **使用場景範例**：
@@ -612,7 +612,7 @@ tmux-launch
   1 │ AI Workspace (主要工作模式)
       → 70/30 分割，適合日常開發
 
-  2 │ AI Compare (比較模式)
+  2 │ AI Split (比較模式)
       → 50/50 分割，適合比較 AI 建議
 
   3 │ Full Focus (專注模式)
@@ -1017,7 +1017,7 @@ Ctrl+Space s    # 顯示 session 列表，上下鍵選擇
 
 **場景**：使用多個 AI 協作開發
 
-**推薦布局**：AI Workspace 或 AI Compare
+**推薦布局**：AI Workspace 或 AI Split
 
 **詳細工作流程請參考** [工作流程範例](workflows.zh-TW.md)
 
@@ -1174,32 +1174,28 @@ Ctrl+Space : kill-session
 
 ---
 
-### Q5: AI CLI 沒有自動啟動？
+### Q5: 為什麼腳本沒有自動啟動 AI CLI？
 
 **A:**
-檢查項目：
+2025-10 更新後，`ai-workspace.sh`、`ai-split.sh`、`full-focus.sh` 僅負責建立窗格與調整版面，不再自動執行 `codex`、`claude` 等 CLI。這樣做可以避免在窗格建立時同時發送指令造成干擾，並讓使用者自由決定要啟動哪個工具。
 
-1. **CLI 是否安裝？**
-   ```bash
-   which codex
-   which claude
-   ```
+建議流程：
 
-2. **PATH 設定正確嗎？**
-   ```bash
-   echo $PATH
-   ```
+1. 執行對應腳本建立 layout。
+2. 切換到想使用的窗格（如 `Ctrl+Space 1`）。
+3. **手動輸入** `codex`、`claude` 或其他指令啟動工具。
 
-3. **手動啟動測試：**
-   ```bash
-   codex
-   claude
-   ```
-
-如果手動可以啟動，但腳本不行，可能是 shell 初始化問題：
+若輸入指令後仍無法啟動，請依序確認：
 
 ```bash
-# 編輯 ~/.tmux.conf，加入：
+which codex
+which claude
+echo $PATH
+```
+
+若 CLI 安裝與 PATH 都正常，仍遇到 shell 初始化問題，可在 `~/.tmux.conf` 加入：
+
+```bash
 set -g default-command "${SHELL}"
 ```
 

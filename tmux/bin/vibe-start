@@ -1,0 +1,541 @@
+#!/usr/bin/env bash
+# ═══════════════════════════════════════════════════════
+# vibe-start - Zero-config tmux + AI workspace launcher
+# ═══════════════════════════════════════════════════════
+
+set -euo pipefail
+
+VERSION="0.1.0"
+
+# ───────────────────────────────────────────────────────
+# Helper output
+# ───────────────────────────────────────────────────────
+
+print_usage() {
+    cat <<'EOF'
+Usage: vibe-start [options]
+
+Options:
+  -h, --help              Show this help message
+      --version           Print version
+  -p, --project <path>    Project directory (default: current directory)
+      --type <auto|next|node|python>
+                          Force project type detection (default: auto)
+      --mode <auto|dev|debug|review>
+                          Launch preset mode (default: auto)
+      --layout <name>     Override layout script (ai-workspace|ai-split|full-focus)
+      --detect            Print detection result and exit
+      --dry-run           Show plan without launching tmux
+      --non-interactive   Assume defaults, never prompt
+  -y, --yes               Auto-confirm prompts
+EOF
+}
+
+log() {
+    local level="$1"
+    shift
+    printf '%s %s\n' "$level" "$*"
+}
+
+# ───────────────────────────────────────────────────────
+# Resolve script + layout paths
+# ───────────────────────────────────────────────────────
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+resolve_layout_home() {
+    if [[ -d "$HOME/.tmux-layouts" ]]; then
+        echo "$HOME/.tmux-layouts"
+    else
+        echo "$(cd "$SCRIPT_DIR/.." && pwd)/layouts"
+    fi
+}
+
+LAYOUT_HOME="$(resolve_layout_home)"
+LAYOUT_LIB="$LAYOUT_HOME/lib/layout-common.sh"
+
+if [[ ! -f "$LAYOUT_LIB" ]]; then
+    log "ERROR" "找不到 layout 共用函式：$LAYOUT_LIB"
+    exit 1
+fi
+
+# shellcheck disable=SC1090
+source "$LAYOUT_LIB"
+
+# ───────────────────────────────────────────────────────
+# CLI parsing
+# ───────────────────────────────────────────────────────
+
+PROJECT_DIR="$PWD"
+REQUESTED_TYPE="auto"
+MODE="auto"
+LAYOUT_OVERRIDE=""
+DRY_RUN=0
+DETECT_ONLY=0
+AUTO_YES=0
+NON_INTERACTIVE=0
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            print_usage
+            exit 0
+            ;;
+        --version)
+            echo "$VERSION"
+            exit 0
+            ;;
+        -p|--project)
+            [[ $# -lt 2 ]] && { log "ERROR" "--project 需要路徑"; exit 1; }
+            PROJECT_DIR="$2"
+            shift 2
+            ;;
+        --type)
+            [[ $# -lt 2 ]] && { log "ERROR" "--type 需要值 (auto|next|node|python)"; exit 1; }
+            REQUESTED_TYPE="$2"
+            shift 2
+            ;;
+        --mode)
+            [[ $# -lt 2 ]] && { log "ERROR" "--mode 需要值 (auto|dev|debug|review)"; exit 1; }
+            MODE="$2"
+            shift 2
+            ;;
+        --layout)
+            [[ $# -lt 2 ]] && { log "ERROR" "--layout 需要名稱"; exit 1; }
+            LAYOUT_OVERRIDE="$2"
+            shift 2
+            ;;
+        --detect)
+            DETECT_ONLY=1
+            shift
+            ;;
+        --dry-run)
+            DRY_RUN=1
+            shift
+            ;;
+        --non-interactive)
+            NON_INTERACTIVE=1
+            AUTO_YES=1
+            shift
+            ;;
+        -y|--yes)
+            AUTO_YES=1
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        -*)
+            log "ERROR" "未知參數：$1"
+            exit 1
+            ;;
+        *)
+            PROJECT_DIR="$1"
+            shift
+            ;;
+    esac
+done
+
+if [[ "$REQUESTED_TYPE" != "auto" && "$REQUESTED_TYPE" != "next" && "$REQUESTED_TYPE" != "node" && "$REQUESTED_TYPE" != "python" ]]; then
+    log "ERROR" "不支援的 --type 值：$REQUESTED_TYPE"
+    exit 1
+fi
+
+if [[ "$MODE" != "auto" && "$MODE" != "dev" && "$MODE" != "debug" && "$MODE" != "review" ]]; then
+    log "ERROR" "不支援的 --mode 值：$MODE"
+    exit 1
+fi
+
+PROJECT_DIR="$(vg_resolve_project_dir "$PROJECT_DIR")"
+cd "$PROJECT_DIR"
+
+# ───────────────────────────────────────────────────────
+# Helpers for detection
+# ───────────────────────────────────────────────────────
+
+python_cmd() {
+    if command -v python3 &> /dev/null; then
+        echo "python3"
+    elif command -v python &> /dev/null; then
+        echo "python"
+    else
+        echo ""
+    fi
+}
+
+package_json_has_script() {
+    local script_name="$1"
+    [[ -f "$PROJECT_DIR/package.json" ]] || return 1
+    local py
+    py="$(python_cmd)"
+    [[ -n "$py" ]] || return 1
+    "$py" - <<'PY' "$PROJECT_DIR/package.json" "$script_name" >/dev/null 2>&1
+import json, sys, pathlib
+path = pathlib.Path(sys.argv[1])
+script = sys.argv[2]
+try:
+    data = json.loads(path.read_text())
+except Exception:
+    sys.exit(1)
+scripts = data.get("scripts", {})
+sys.exit(0 if script in scripts else 1)
+PY
+}
+
+package_json_has_dependency() {
+    local dependency="$1"
+    [[ -f "$PROJECT_DIR/package.json" ]] || return 1
+    local py
+    py="$(python_cmd)"
+    [[ -n "$py" ]] || return 1
+    "$py" - <<'PY' "$PROJECT_DIR/package.json" "$dependency" >/dev/null 2>&1
+import json, sys, pathlib
+path = pathlib.Path(sys.argv[1])
+target = sys.argv[2]
+try:
+    data = json.loads(path.read_text())
+except Exception:
+    sys.exit(1)
+for section in ("dependencies", "devDependencies", "peerDependencies", "optionalDependencies"):
+    deps = data.get(section, {})
+    if isinstance(deps, dict) and target in deps:
+        sys.exit(0)
+sys.exit(1)
+PY
+}
+
+detect_package_manager() {
+    if [[ -f "$PROJECT_DIR/pnpm-lock.yaml" ]]; then
+        echo "pnpm"
+    elif [[ -f "$PROJECT_DIR/yarn.lock" ]]; then
+        echo "yarn"
+    elif [[ -f "$PROJECT_DIR/bun.lockb" ]]; then
+        echo "bun"
+    else
+        echo "npm"
+    fi
+}
+
+pm_run() {
+    local script="$1"
+    local pm; pm="$(detect_package_manager)"
+    case "$pm" in
+        pnpm) echo "pnpm $script" ;;
+        yarn) echo "yarn $script" ;;
+        bun) echo "bun $script" ;;
+        npm|*) echo "npm run $script" ;;
+    esac
+}
+
+python_main_command() {
+    if [[ -f "$PROJECT_DIR/manage.py" ]]; then
+        echo "python manage.py runserver"
+    elif [[ -f "$PROJECT_DIR/app.py" ]]; then
+        echo "python app.py"
+    elif [[ -f "$PROJECT_DIR/main.py" ]]; then
+        echo "python main.py"
+    elif [[ -d "$PROJECT_DIR/src" && -f "$PROJECT_DIR/src/main.py" ]]; then
+        echo "python src/main.py"
+    else
+        echo "python -m http.server 8000"
+    fi
+}
+
+python_test_command() {
+    if command -v pytest &> /dev/null; then
+        echo "pytest -f"
+    elif command -v nose2 &> /dev/null; then
+        echo "nose2 -s"
+    else
+        echo "echo '🔍 沒有偵測到測試框架，請自訂指令'"
+    fi
+}
+
+detect_project_type() {
+    if [[ "$REQUESTED_TYPE" != "auto" ]]; then
+        echo "$REQUESTED_TYPE"
+        return
+    fi
+
+    if [[ -f "$PROJECT_DIR/package.json" ]]; then
+        if package_json_has_dependency "next" || ls "$PROJECT_DIR"/next.config.* >/dev/null 2>&1; then
+            echo "next"
+            return
+        fi
+        echo "node"
+        return
+    fi
+
+    if [[ -f "$PROJECT_DIR/pyproject.toml" || -f "$PROJECT_DIR/requirements.txt" ]]; then
+        echo "python"
+        return
+    fi
+
+    echo "unknown"
+}
+
+# ───────────────────────────────────────────────────────
+# Plan construction
+# ───────────────────────────────────────────────────────
+
+declare -a PLAN_ENTRIES=()
+PLAN_LAYOUT=""
+PLAN_DESCRIPTION=""
+
+plan_add() {
+    PLAN_ENTRIES+=("$1|$2|$3")
+}
+
+build_plan_for_next() {
+    PLAN_LAYOUT="${LAYOUT_OVERRIDE:-ai-workspace}"
+    PLAN_DESCRIPTION="Next.js workspace"
+
+    local dev_cmd="npm run dev"
+    if package_json_has_script "dev"; then
+        dev_cmd="$(pm_run dev)"
+    elif package_json_has_script "start"; then
+        dev_cmd="$(pm_run start)"
+    fi
+
+    local test_cmd="echo '🧪 無 test 指令，請自訂'"
+    if package_json_has_script "test"; then
+        test_cmd="$(pm_run test)"
+    fi
+
+    plan_add "1.1" "Next.js 開發伺服器" "$dev_cmd"
+    plan_add "1.2" "主要 AI (${VIBE_AI_PRIMARY:-codex})" "${VIBE_AI_PRIMARY:-codex}"
+    plan_add "1.3" "測試 / 監控" "$test_cmd"
+}
+
+build_plan_for_node() {
+    PLAN_LAYOUT="${LAYOUT_OVERRIDE:-ai-workspace}"
+    PLAN_DESCRIPTION="Node.js workspace"
+
+    local main_cmd="node ."
+    if package_json_has_script "dev"; then
+        main_cmd="$(pm_run dev)"
+    elif package_json_has_script "start"; then
+        main_cmd="$(pm_run start)"
+    fi
+
+    local test_cmd="echo '🧪 無 test 指令，請自訂'"
+    if package_json_has_script "test"; then
+        test_cmd="$(pm_run test)"
+    fi
+
+    plan_add "1.1" "Node.js 主服務" "$main_cmd"
+    plan_add "1.2" "主要 AI (${VIBE_AI_PRIMARY:-codex})" "${VIBE_AI_PRIMARY:-codex}"
+    plan_add "1.3" "測試 / 監控" "$test_cmd"
+}
+
+build_plan_for_python() {
+    PLAN_LAYOUT="${LAYOUT_OVERRIDE:-ai-workspace}"
+    PLAN_DESCRIPTION="Python workspace"
+
+    local main_cmd; main_cmd="$(python_main_command)"
+    local test_cmd; test_cmd="$(python_test_command)"
+
+    plan_add "1.1" "Python 應用程式" "$main_cmd"
+    plan_add "1.2" "主要 AI (${VIBE_AI_PRIMARY:-codex})" "${VIBE_AI_PRIMARY:-codex}"
+    plan_add "1.3" "測試 / 監控" "$test_cmd"
+}
+
+build_plan_for_mode() {
+    case "$MODE" in
+        dev|auto)
+            return 0
+            ;;
+        debug)
+            PLAN_LAYOUT="${LAYOUT_OVERRIDE:-ai-split}"
+            PLAN_DESCRIPTION="Debug 模式（AI Split）"
+            PLAN_ENTRIES=()
+            plan_add "1.1" "左側工具 (${VIBE_AI_LEFT:-codex})" "${VIBE_AI_LEFT:-codex}"
+            plan_add "1.2" "右側工具 (${VIBE_AI_RIGHT:-claude})" "${VIBE_AI_RIGHT:-claude}"
+            plan_add "1.3" "比對 / 測試" "echo '💡 在此 pane 執行 diff、測試或日誌指令'"
+            ;;
+        review)
+            PLAN_LAYOUT="${LAYOUT_OVERRIDE:-ai-split}"
+            PLAN_DESCRIPTION="Code Review 模式"
+            PLAN_ENTRIES=()
+            plan_add "1.1" "Codex Review" "${VIBE_AI_LEFT:-codex}"
+            plan_add "1.2" "Claude Review" "${VIBE_AI_RIGHT:-claude}"
+            plan_add "1.3" "git diff" "git status && git diff"
+            ;;
+        *)
+            ;;
+    esac
+}
+
+build_plan() {
+    local project_type="$1"
+
+    case "$project_type" in
+        next)
+            build_plan_for_next
+            ;;
+        node)
+            build_plan_for_node
+            ;;
+        python)
+            build_plan_for_python
+            ;;
+        *)
+            PLAN_LAYOUT="${LAYOUT_OVERRIDE:-ai-workspace}"
+            PLAN_DESCRIPTION="通用工作區"
+            PLAN_ENTRIES=()
+            plan_add "1.1" "Shell" "echo '👉 在此 pane 啟動您的應用程式'"
+            plan_add "1.2" "主要 AI (${VIBE_AI_PRIMARY:-codex})" "${VIBE_AI_PRIMARY:-codex}"
+            plan_add "1.3" "Notes" "echo '💡 在此 pane 記錄指令或啟動測試'"
+            ;;
+    esac
+
+    build_plan_for_mode
+
+    if [[ -n "$LAYOUT_OVERRIDE" ]]; then
+        PLAN_LAYOUT="$LAYOUT_OVERRIDE"
+    fi
+}
+
+# ───────────────────────────────────────────────────────
+# Validation helpers
+# ───────────────────────────────────────────────────────
+
+extract_binary() {
+    local cmd="$1"
+    local first="${cmd%% *}"
+    # handle bun run etc.
+    if [[ "$first" == "npm" && "$cmd" == npm\ test* ]]; then
+        echo "npm"
+        return
+    fi
+    echo "$first"
+}
+
+ensure_dependencies() {
+    local missing=0
+    for entry in "${PLAN_ENTRIES[@]}"; do
+        IFS="|" read -r _ _ command <<< "$entry"
+        local bin
+        bin="$(extract_binary "$command")"
+        [[ -z "$bin" ]] && continue
+        case "$bin" in
+            echo|clear|git|sleep)
+                continue
+                ;;
+        esac
+        if ! command -v "$bin" >/dev/null 2>&1; then
+            log "WARN" "找不到指令：$bin（對應 pane 指令：$command）"
+            missing=1
+        fi
+    done
+    return $missing
+}
+
+# ───────────────────────────────────────────────────────
+# Preview / execution
+# ───────────────────────────────────────────────────────
+
+print_preview() {
+    local project_type="$1"
+    echo "📁 專案目錄: $PROJECT_DIR"
+    echo "🧭 偵測類型: $project_type"
+    echo "🗺️  Layout:  $PLAN_LAYOUT ($PLAN_DESCRIPTION)"
+    echo ""
+    printf '%-7s %-24s %s\n' "Pane" "說明" "指令"
+    printf '%-7s %-24s %s\n' "------" "------------------------" "------------------------"
+    for entry in "${PLAN_ENTRIES[@]}"; do
+        IFS="|" read -r pane label command <<< "$entry"
+        printf '%-7s %-24s %s\n' "$pane" "$label" "$command"
+    done
+    echo ""
+}
+
+send_tmux_commands() {
+    local session_name="$1"
+    for entry in "${PLAN_ENTRIES[@]}"; do
+        IFS="|" read -r pane _ command <<< "$entry"
+        tmux send-keys -t "${session_name}:${pane}" "clear" C-m
+        while IFS= read -r line; do
+            [[ -z "$line" ]] && continue
+            tmux send-keys -t "${session_name}:${pane}" -- "$line"
+            tmux send-keys -t "${session_name}:${pane}" C-m
+        done <<< "$command"
+    done
+}
+
+layout_script_path() {
+    local layout="$1"
+    local path="$LAYOUT_HOME/${layout}.sh"
+    if [[ -x "$path" ]]; then
+        echo "$path"
+    else
+        log "ERROR" "找不到布局腳本：$path"
+        exit 1
+    fi
+}
+
+layout_session_name() {
+    local layout="$1"
+    case "$layout" in
+        ai-workspace)
+            vg_session_name "ai-work" "$PROJECT_DIR" "ai"
+            ;;
+        ai-split)
+            vg_session_name "ai-split" "$PROJECT_DIR" "split"
+            ;;
+        full-focus)
+            vg_session_name "ai-focus" "$PROJECT_DIR" "focus"
+            ;;
+        *)
+            vg_session_name "$layout" "$PROJECT_DIR" "$layout"
+            ;;
+    esac
+}
+
+# ───────────────────────────────────────────────────────
+# Main execution
+# ───────────────────────────────────────────────────────
+
+PROJECT_TYPE="$(detect_project_type)"
+
+if [[ "$DETECT_ONLY" -eq 1 ]]; then
+    echo "$PROJECT_TYPE"
+    exit 0
+fi
+
+build_plan "$PROJECT_TYPE"
+
+print_preview "$PROJECT_TYPE"
+
+ensure_dependencies || true
+
+if [[ "$DRY_RUN" -eq 1 ]]; then
+    exit 0
+fi
+
+if [[ "$AUTO_YES" -ne 1 ]]; then
+    read -p "啟動上述工作區？ [Y/n]: " answer
+    if [[ -n "$answer" && "$answer" =~ ^[Nn]$ ]]; then
+        echo "❌ 已取消"
+        exit 0
+    fi
+fi
+
+export VIBE_SKIP_ATTACH=1
+export VIBE_NON_INTERACTIVE=$NON_INTERACTIVE
+export VIBE_FORCE_RECREATE=1
+export VIBE_ASSUME_YES=$AUTO_YES
+
+LAYOUT_SCRIPT="$(layout_script_path "$PLAN_LAYOUT")"
+
+"$LAYOUT_SCRIPT" "$PROJECT_DIR"
+
+SESSION_NAME="$(layout_session_name "$PLAN_LAYOUT")"
+
+# 等待 tmux 完成建立
+sleep 0.3
+
+send_tmux_commands "$SESSION_NAME"
+
+tmux attach-session -t "$SESSION_NAME"

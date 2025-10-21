@@ -328,7 +328,7 @@ project:
           secondary: codex
           monitor: npm run dev
       debug:
-        layout: ai-compare
+        layout: ai-split
         # ... 更多配置
   # ... 還有 350+ 行
 ```
@@ -371,7 +371,7 @@ export VIBE_CHECK_PORTS=true
 ```
 支援布局:
 - ai-workspace (70/30 split)
-- ai-compare (50/50 split)
+- ai-split (50/50 split)
 - full-focus (100% single pane)
 
 支援模式:
@@ -396,7 +396,7 @@ export VIBE_CHECK_PORTS=true
 **數據支持**：
 ```
 ai-workspace 使用率: 預估 90%+
-ai-compare 使用率:   預估 8%
+ai-split 使用率:   預估 8%
 full-focus 使用率:   預估 2%
 
 結論: 90% 用戶僅需 ai-workspace

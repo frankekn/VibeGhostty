@@ -37,26 +37,26 @@ fi
 declare -A LAYOUT_INFO=(
     ["ai-workspace:name"]="AI Workspace"
     ["ai-workspace:desc"]="主要開發布局，70/30 分割"
-    ["ai-workspace:tools"]="Codex CLI (70%) + Claude Code (30%)"
+    ["ai-workspace:tools"]="主工作區 (70%) + 輔助工具 (30%)"
     ["ai-workspace:preview"]="┌─────────────────┬──────┐\n│   Primary       │ Aux  │\n│   70%           │ 30%  │\n│                 ├──────┤\n│                 │ Mon. │\n└─────────────────┴──────┘"
 
-    ["ai-compare:name"]="AI Compare"
-    ["ai-compare:desc"]="並排比較兩個 AI 輸出"
-    ["ai-compare:tools"]="Codex (50%) + Claude (50%)"
-    ["ai-compare:preview"]="┌─────────┬─────────┐\n│ Codex   │ Claude  │\n│ 50%     │ 50%     │\n├─────────┴─────────┤\n│ Compare/Monitor   │\n└───────────────────┘"
+    ["ai-split:name"]="AI Split"
+    ["ai-split:desc"]="50/50 並排布局，適合多種工作流程"
+    ["ai-split:tools"]="左側窗格 (50%) + 右側窗格 (50%)"
+    ["ai-split:preview"]="┌─────────┬─────────┐\n│  Left   │  Right  │\n│  50%    │  50%    │\n├─────────┴─────────┤\n│  Assistant Pane   │\n└───────────────────┘"
 
     ["full-focus:name"]="Full Focus"
     ["full-focus:desc"]="全屏專注模式，最小干擾"
-    ["full-focus:tools"]="Single AI (100%)"
-    ["full-focus:preview"]="┌───────────────────┐\n│                   │\n│   Single AI       │\n│   100%            │\n│                   │\n└───────────────────┘"
+    ["full-focus:tools"]="單一工具 (100%)"
+    ["full-focus:preview"]="┌───────────────────┐\n│                   │\n│   Single Tool     │\n│   100%            │\n│                   │\n└───────────────────┘"
 )
 
 # 環境變數資訊
 declare -A ENV_VARS=(
     ["VIBE_AI_PRIMARY"]="ai-workspace 主要工具 (預設: codex)"
     ["VIBE_AI_SECONDARY"]="ai-workspace 輔助工具 (預設: claude)"
-    ["VIBE_AI_LEFT"]="ai-compare 左側工具 (預設: codex)"
-    ["VIBE_AI_RIGHT"]="ai-compare 右側工具 (預設: claude)"
+    ["VIBE_AI_LEFT"]="ai-split 左側工具 (預設: codex)"
+    ["VIBE_AI_RIGHT"]="ai-split 右側工具 (預設: claude)"
     ["VIBE_AI_FOCUS"]="full-focus 使用的工具 (預設: codex)"
 )
 
@@ -78,14 +78,14 @@ ${CYAN}選項:${RESET}
 
 ${CYAN}可用布局:${RESET}
   ai-workspace           主要開發布局 (70/30 分割)
-  ai-compare             並排比較布局 (50/50 分割)
+  ai-split               並排布局 (50/50 分割)
   full-focus             全屏專注模式 (100% 單一工具)
 
 ${CYAN}環境變數:${RESET}
   VIBE_AI_PRIMARY       ai-workspace 主要工具 (預設: codex)
   VIBE_AI_SECONDARY     ai-workspace 輔助工具 (預設: claude)
-  VIBE_AI_LEFT          ai-compare 左側工具 (預設: codex)
-  VIBE_AI_RIGHT         ai-compare 右側工具 (預設: claude)
+  VIBE_AI_LEFT          ai-split 左側工具 (預設: codex)
+  VIBE_AI_RIGHT         ai-split 右側工具 (預設: claude)
   VIBE_AI_FOCUS         full-focus 使用的工具 (預設: codex)
 
 ${CYAN}範例:${RESET}
@@ -105,7 +105,7 @@ EOF
 list_layouts() {
     echo -e "${BOLD}${CYAN}可用布局:${RESET}\n"
 
-    for layout in "ai-workspace" "ai-compare" "full-focus"; do
+    for layout in "ai-workspace" "ai-split" "full-focus"; do
         local name="${LAYOUT_INFO[${layout}:name]}"
         local desc="${LAYOUT_INFO[${layout}:desc]}"
         local tools="${LAYOUT_INFO[${layout}:tools]}"
@@ -126,6 +126,7 @@ list_layouts() {
 verify_layout_script() {
     local layout=$1
     local script="$LAYOUTS_DIR/${layout}.sh"
+    local shared_lib="$LAYOUTS_DIR/lib/layout-common.sh"
 
     # 檢查腳本是否存在
     if [[ ! -f "$script" ]]; then
@@ -149,6 +150,13 @@ verify_layout_script() {
             echo -e "   ${BOLD}chmod +x $script${RESET}"
             return 1
         fi
+    fi
+
+    if [[ ! -f "$shared_lib" ]]; then
+        echo -e "${RED}❌ 錯誤: 缺少共用模組${RESET}"
+        echo -e "   路徑: ${DIM}$shared_lib${RESET}"
+        echo -e "${YELLOW}💡 解決方案:${RESET} 重新執行安裝腳本以同步最新架構"
+        return 1
     fi
 
     return 0
@@ -182,12 +190,12 @@ print_menu() {
     echo -e "${DIM}$(echo -e "${LAYOUT_INFO["ai-workspace:preview"]}" | sed 's/^/    │   /')${RESET}"
     echo ""
 
-    # Layout 2: AI Compare
-    echo -e "  ${GREEN}${BOLD}2${RESET} │ ${BOLD}${LAYOUT_INFO["ai-compare:name"]}${RESET}"
-    echo -e "    │ ${DIM}${LAYOUT_INFO["ai-compare:desc"]}${RESET}"
-    echo -e "    │ ${CYAN}工具:${RESET} ${LAYOUT_INFO["ai-compare:tools"]}"
+    # Layout 2: AI Split
+    echo -e "  ${GREEN}${BOLD}2${RESET} │ ${BOLD}${LAYOUT_INFO["ai-split:name"]}${RESET}"
+    echo -e "    │ ${DIM}${LAYOUT_INFO["ai-split:desc"]}${RESET}"
+    echo -e "    │ ${CYAN}工具:${RESET} ${LAYOUT_INFO["ai-split:tools"]}"
     echo -e "    │ ${DIM}預覽:${RESET}"
-    echo -e "${DIM}$(echo -e "${LAYOUT_INFO["ai-compare:preview"]}" | sed 's/^/    │   /')${RESET}"
+    echo -e "${DIM}$(echo -e "${LAYOUT_INFO["ai-split:preview"]}" | sed 's/^/    │   /')${RESET}"
     echo ""
 
     # Layout 3: Full Focus
@@ -341,7 +349,7 @@ parse_arguments() {
                 PROJECT_DIR="$2"
                 shift 2
                 ;;
-            ai-workspace|ai-compare|full-focus)
+            ai-workspace|ai-split|full-focus)
                 # 直接啟動指定的布局
                 if ! verify_layout_script "$1"; then
                     exit 1
@@ -393,7 +401,7 @@ while true; do
             exit 0
             ;;
         2)
-            launch_layout "ai-compare"
+            launch_layout "ai-split"
             exit 0
             ;;
         3)

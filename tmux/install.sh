@@ -204,17 +204,15 @@ if [[ -f "$HOME/.tmux.conf" ]]; then
     print_warning "Backed up: .tmux.conf"
 fi
 
-# Backup layout scripts
-for script in ai-workspace.sh ai-compare.sh full-focus.sh; do
-    if [[ -f "$HOME/.tmux-layouts/$script" ]]; then
-        cp "$HOME/.tmux-layouts/$script" "$BACKUP_DIR/"
-        ((BACKUP_COUNT++))
-        print_warning "Backed up: .tmux-layouts/$script"
-    fi
-done
+# Backup layout目錄
+if [[ -d "$HOME/.tmux-layouts" ]]; then
+    cp -R "$HOME/.tmux-layouts" "$BACKUP_DIR/tmux-layouts"
+    ((BACKUP_COUNT++))
+    print_warning "Backed up: .tmux-layouts/"
+fi
 
 # Backup bin tools
-for tool in tmux-launch vibe-help ta; do
+for tool in tmux-launch vibe-help ta vibe-start; do
     if [[ -f "$HOME/.local/bin/$tool" ]]; then
         mkdir -p "$BACKUP_DIR/bin"
         cp "$HOME/.local/bin/$tool" "$BACKUP_DIR/bin/"
@@ -236,9 +234,9 @@ echo ""
 cp "$SCRIPT_DIR/tmux.conf" "$HOME/.tmux.conf"
 print_success "Copied tmux.conf"
 
-# Copy layout scripts
-cp "$SCRIPT_DIR/layouts/"*.sh "$HOME/.tmux-layouts/"
-print_success "Copied layout scripts"
+# Copy layout scripts & shared libs
+cp -R "$SCRIPT_DIR/layouts/." "$HOME/.tmux-layouts/"
+print_success "Copied layout assets"
 
 # Copy launcher
 cp "$SCRIPT_DIR/bin/tmux-launch" "$HOME/.local/bin/tmux-launch"
@@ -252,6 +250,10 @@ print_success "Copied vibe-help"
 cp "$SCRIPT_DIR/bin/ta" "$HOME/.local/bin/ta"
 print_success "Copied ta helper"
 
+# Copy vibe-start
+cp "$SCRIPT_DIR/bin/vibe-start" "$HOME/.local/bin/vibe-start"
+print_success "Copied vibe-start"
+
 echo ""
 
 # Step 7: Set executable permissions
@@ -261,6 +263,7 @@ chmod +x "$HOME/.tmux-layouts/"*.sh
 chmod +x "$HOME/.local/bin/tmux-launch"
 chmod +x "$HOME/.local/bin/vibe-help"
 chmod +x "$HOME/.local/bin/ta"
+chmod +x "$HOME/.local/bin/vibe-start"
 
 print_success "Permissions updated"
 
@@ -298,9 +301,11 @@ echo ""
 print_step "Linting shell scripts..."
 
 bash -n "$HOME/.tmux-layouts/ai-workspace.sh" && print_success "ai-workspace.sh passed syntax check"
-bash -n "$HOME/.tmux-layouts/ai-compare.sh" && print_success "ai-compare.sh passed syntax check"
+bash -n "$HOME/.tmux-layouts/ai-split.sh" && print_success "ai-split.sh passed syntax check"
 bash -n "$HOME/.tmux-layouts/full-focus.sh" && print_success "full-focus.sh passed syntax check"
+bash -n "$HOME/.tmux-layouts/lib/layout-common.sh" && print_success "layout-common.sh passed syntax check"
 bash -n "$HOME/.local/bin/tmux-launch" && print_success "tmux-launch passed syntax check"
+bash -n "$HOME/.local/bin/vibe-start" && print_success "vibe-start passed syntax check"
 
 echo ""
 
@@ -347,7 +352,7 @@ echo -e "     ${YELLOW}tmux-launch${RESET}              # menu-based layout pick
 echo ""
 echo "  5️⃣  Launch layouts directly"
 echo -e "     ${YELLOW}~/.tmux-layouts/ai-workspace.sh${RESET}"
-echo -e "     ${YELLOW}~/.tmux-layouts/ai-compare.sh${RESET}"
+echo -e "     ${YELLOW}~/.tmux-layouts/ai-split.sh${RESET}"
 echo -e "     ${YELLOW}~/.tmux-layouts/full-focus.sh${RESET}"
 echo ""
 echo "  6️⃣  Reload your tmux configuration"

@@ -139,7 +139,7 @@ tmux-launch
 
 請選擇布局:
   1) AI Workspace  - 主要工作模式（70/30）
-  2) AI Compare    - 並排比較模式（50/50）
+  2) AI Split    - 並排比較模式（50/50）
   3) Full Focus    - 全屏專注模式
   4) Resume        - 恢復上次會話
   q) Quit
@@ -162,7 +162,7 @@ tmux-launch
 # VibeGhostty 快速啟動
 alias cai='tmux-launch'                  # 啟動選單
 alias workspace='~/.tmux-layouts/ai-workspace.sh'
-alias compare='~/.tmux-layouts/ai-compare.sh'
+alias compare='~/.tmux-layouts/ai-split.sh'
 alias focus='~/.tmux-layouts/full-focus.sh'
 alias keys='vibe-help'                   # 查看快捷鍵
 ```

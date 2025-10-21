@@ -41,7 +41,7 @@ export VIBE_AI_SECONDARY=codex
 
 ---
 
-### AI Compare 布局 (`ai-compare.sh`)
+### AI Split 布局 (`ai-split.sh`)
 
 並排比較模式，50/50 分割視窗配置。
 
@@ -55,10 +55,10 @@ export VIBE_AI_SECONDARY=codex
 # 比較 Claude 和 Codex 的建議
 export VIBE_AI_LEFT=claude
 export VIBE_AI_RIGHT=codex
-./ai-compare.sh
+./ai-split.sh
 
 # 或使用預設配置
-./ai-compare.sh
+./ai-split.sh
 ```
 
 **布局結構**：
@@ -198,7 +198,7 @@ direnv allow .
 - ⚠️ **單一工具缺失**：詢問是否繼續（功能受限）
 - ❌ **兩個工具都缺失**：中止執行，顯示安裝指引
 
-#### ai-compare.sh
+#### ai-split.sh
 - ✅ **兩個工具都存在**：正常啟動
 - ⚠️ **單一工具缺失**：警告但可繼續（比較功能受限）
 - ❌ **兩個工具都缺失**：中止執行，顯示安裝指引
@@ -254,7 +254,7 @@ export VIBE_AI_PRIMARY=codex
 # 比較 Claude 和 Codex 對同一問題的回答
 export VIBE_AI_LEFT=claude
 export VIBE_AI_RIGHT=codex
-./ai-compare.sh
+./ai-split.sh
 ```
 
 ### 場景 4：深度專注模式
@@ -365,7 +365,7 @@ export VIBE_AI_FOCUS=claude
 # ~/.zshrc
 alias vibe-claude='export VIBE_AI_PRIMARY=claude && export VIBE_AI_SECONDARY=codex && ./ai-workspace.sh'
 alias vibe-codex='export VIBE_AI_PRIMARY=codex && export VIBE_AI_SECONDARY=claude && ./ai-workspace.sh'
-alias vibe-compare='./ai-compare.sh'
+alias vibe-compare='./ai-split.sh'
 alias vibe-focus-claude='./full-focus.sh . claude'
 alias vibe-focus-codex='./full-focus.sh . codex'
 ```

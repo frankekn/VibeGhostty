@@ -59,7 +59,7 @@ tmux-launch
 選擇工作空間布局：
 
   1 │ AI Workspace (主要工作模式)
-  2 │ AI Compare (比較模式)
+  2 │ AI Split (比較模式)
   3 │ Full Focus (專注模式)
   4 │ Resume (恢復上次 session)
   q │ Exit (離開)
@@ -79,10 +79,10 @@ tmux-launch
 └─────────────────────────┴─────────────┘
 ```
 
-**三個 Panes 自動設定完成：**
-- **左側**：Codex CLI（自動啟動）
-- **右上**：Claude Code（自動啟動）
-- **右下**：Monitor（顯示使用提示）
+**三個 Panes 已預留好空間：**
+- **左側**：Codex CLI（手動輸入 `codex`，或改用 `vibe-start` 自動啟動）
+- **右上**：Claude Code（手動輸入 `claude`，或由 `vibe-start` 注入）
+- **右下**：Monitor（顯示提示，可手動輸入測試/日誌指令）
 
 ---
 
@@ -99,8 +99,8 @@ Ctrl+Space
 ### 2. 快速跳轉 Panes
 
 ```
-Ctrl+Space 1    → 跳到 Codex CLI（左側）
-Ctrl+Space 2    → 跳到 Claude Code（右上）
+Ctrl+Space 1    → 跳到 Codex pane（左側）
+Ctrl+Space 2    → 跳到 Claude pane（右上）
 Ctrl+Space 3    → 跳到 Monitor（右下）
 ```
 
@@ -166,6 +166,18 @@ Ctrl+Space :
 按 Enter
 ```
 
+### 想要自動啟動所有工具？
+
+`tmux-launch` 只負責建立 panes，指令仍由你自行輸入。若想一次完成偵測專案 + 啟動 AI CLI + 開測試流程：
+
+```bash
+vibe-start              # 預覽後自動建立 session
+vibe-start --dry-run    # 只顯示將執行的指令
+vibe-start --mode review --yes
+```
+
+`vibe-start` 會選擇合適的布局（AI Workspace / AI Split），並在每個 pane 自動輸入命令。
+
 ---
 
 ## 🎨 三種布局快速參考
@@ -191,7 +203,7 @@ tmux-launch → 選 1
 
 ---
 
-### 布局 2：AI Compare（比較模式）
+### 布局 2：AI Split（比較模式）
 
 **何時使用：**
 - 比較兩個 AI 的解決方案
@@ -206,7 +218,7 @@ tmux-launch → 選 1
 ```bash
 tmux-launch → 選 2
 # 或
-~/.tmux-layouts/ai-compare.sh
+~/.tmux-layouts/ai-split.sh
 ```
 
 **使用範例：**
@@ -391,12 +403,17 @@ source ~/.zshrc
 
 ### 問題 3：AI CLI 沒有自動啟動
 
-```bash
-# 檢查是否安裝
-which codex
-which claude
+預設布局不會自動執行任何 AI 指令，pane 會保持空白讓你自行控制。請切換到對應 pane 後輸入：
 
-# 如果沒安裝，請先安裝 AI CLI
+```bash
+codex     # 左側 pane
+claude    # 右上 pane
+```
+
+如果想讓兩邊自動啟動，可以改用：
+
+```bash
+vibe-start --yes
 ```
 
 ### 問題 4：顏色看起來不對
@@ -445,7 +462,7 @@ cat ~/Documents/GitHub/VibeGhostty/TMUX_GUIDE.md
    - 嘗試 zoom 功能
 
 2. **第 2 天**：嘗試其他布局
-   - 試用 AI Compare 模式
+   - 試用 AI Split 模式
    - 體驗 Full Focus 專注模式
 
 3. **第 3 天**：學習進階功能
